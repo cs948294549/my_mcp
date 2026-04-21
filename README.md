@@ -8,6 +8,9 @@ qwen --version
 ## 安装mcp方便调用
 ```text
 qwen mcp add --name time-tcp --url http://127.0.0.1:8000/sse
+
+检查是否成功
+qwen mcp list
 ```
 
 ## config配置
