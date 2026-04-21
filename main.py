@@ -1,7 +1,7 @@
 from flask import Flask, request, Response, jsonify
 import json
-from mcp_main.func_weather import get_weather, get_device_info
-from mcp_main.func_runcmd import run_cmd
+from functions.func_weather import get_weather, get_device_info
+from functions.func_runcmd import run_cmd
 
 app = Flask(__name__)
 
@@ -14,17 +14,6 @@ app = Flask(__name__)
 # MCP 工具定义 (纯手写，不依赖 SDK)
 # --------------------------
 MCP_TOOLS_prompt = [
-    {
-        "name": "get_weather",
-        "description": "获取指定城市的当前天气",
-        "inputSchema": {
-            "type": "object",
-            "properties": {
-                "city": {"type": "string", "description": "城市名称"}
-            },
-            "required": ["city"]
-        }
-    },
     {
         "name": "run_cmd",
         "description": "登录交换机设备执行命令，获取执行结果",
@@ -52,7 +41,6 @@ MCP_TOOLS_prompt = [
 ]
 
 MCP_TOOLS = {
-    "get_weather": get_weather,
     "run_cmd": run_cmd,
     "get_device_info":get_device_info,
 }
