@@ -10,3 +10,8 @@ qwen --version
 qwen mcp add --name time-tcp --url http://127.0.0.1:8000/sse
 ```
 
+## config配置
+```text
+根目录下创建config.py文件
+user_password = {"username": "xxx", "password": "xxx"}
+```
