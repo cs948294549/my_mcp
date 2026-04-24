@@ -4,7 +4,10 @@
 npm install -g @qwen-code/qwen-code@latest
 qwen --version
 ```
-
+## 启动mcp服务
+```text
+python3 main.py
+```
 ## 安装mcp方便调用
 ```text
 qwen mcp add --name time-tcp --url http://127.0.0.1:8000/sse
