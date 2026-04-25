@@ -1,0 +1,7 @@
+{
+  "tools": { "includeToolHistoryLimit": 2 },
+  "context": {
+    "maxHistoryRounds": 6,
+    "autocompactBufferRatio": 0.05
+  }
+}
