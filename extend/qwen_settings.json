@@ -1,0 +1,36 @@
+{
+  "env": {
+    "DASHSCOPE_API_KEY": "sk-xx4",
+    "VOLC_API_KEY": "99f477c9-xx"
+  },
+  "modelProviders": {
+    "openai": [
+      {
+        "id": "qwen3.6-plus",
+        "name": "[ModelStudio Standard] qwen3.6-plus",
+        "baseUrl": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+        "envKey": "DASHSCOPE_API_KEY"
+      },
+      {
+        "id": "doubao-seed-2-0-code-preview-260215",
+        "name": "Doubao-Seed-2.0-Code",
+        "baseUrl": "https://ark.cn-beijing.volces.com/api/v3",
+        "envKey": "VOLC_API_KEY"
+      }
+    ]
+  },
+  "security": {
+    "auth": {
+      "selectedType": "openai"
+    }
+  },
+  "model": {
+    "name": "doubao-seed-2-0-code-preview-260215"
+  },
+  "$version": 3,
+  "mcpServers": {
+    "": {
+      "httpUrl": "http://127.0.0.1:8000/sse"
+    }
+  }
+}
