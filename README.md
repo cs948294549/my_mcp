@@ -66,3 +66,80 @@ description: "通过调用交换机执行命令mcp，快速定位所查询IP或M
 4. 登录邻居设备重复步骤2、3、4，直到查不到邻居关系，证明接入点已经查到；
 3. 总结信息，返回接入点位置以及途径的设备列表。
 ```
+# 额外插件
+## windows
+```text
+windows好点的终端
+https://github.com/microsoft/terminal/releases
+https://github.com/microsoft/terminal
+winget install --id Microsoft.WindowsTerminal -e
+```
+
+# 一个完整示例
+```text
+claude code
+❯ 帮我查下192.168.120.65 接在哪个交换机下
+
+● Skill(find_access_point)
+  ⎿  Successfully loaded skill
+
+● 我来帮你追踪 192.168.120.65 的接入位置。首先查找核心交换机。
+
+  Called notion 2 times (ctrl+o to expand)
+
+● 找到两台核心交换机，先在两台核心上查询 ARP 信息。
+
+  Called notion 2 times (ctrl+o to expand)
+
+● 找到了！MAC 地址是 d0f4-0536-ae17，转发接口是 Eth-Trunk3。接下来查询 MAC 地址表和 Eth-Trunk 成员口。
+
+  Called notion 2 times (ctrl+o to expand)
+
+● MAC 在 Eth-Trunk3 上，包含两个成员口 XGE0/0/5 和 XGE1/0/5。接下来查询 LLDP 邻居，看 Eth-Trunk3 连接到哪台设备。
+
+  Called notion 2 times (ctrl+o to expand)
+
+● 没有匹配到，让我查看完整的 LLDP 邻居表。
+
+  Called notion 2 times (ctrl+o to expand)
+
+● 从 LLDP 可以看到，XGE0/0/5 和 XGE1/0/5（Eth-Trunk3 的成员口）都连接到 DK-35F-A003。接下来登录 DK-35F-A003 查询 MAC
+  地址。
+
+  Called notion 3 times (ctrl+o to expand)
+
+● 找到了！MAC 地址 d0f4-0536-ae17 在 DK-35F-A003 的 GE0/0/16 端口上学习到。让我确认一下这个端口是否还有下游设备。
+
+  Called notion (ctrl+o to expand)
+
+∴ Thinking…
+
+  No neighbor device found on GE0/0/16 - it shows "-" for Neighbor Dev, which means the device connected there doesn't
+  support LLDP or has it disabled. This is likely an endpoint device (PC/server). The path ends here.
+● 追踪完毕！以下是结果汇总：
+
+  接入点位置
+
+  ┌────────────┬───────────────────────────┐
+  │    项目    │           信息            │
+  ├────────────┼───────────────────────────┤
+  │ 终端 IP    │ 192.168.120.65            │
+  ├────────────┼───────────────────────────┤
+  │ 终端 MAC   │ d0f4-0536-ae17            │
+  ├────────────┼───────────────────────────┤
+  │ 接入交换机 │ DK-35F-A003 (10.92.42.83) │
+  ├────────────┼───────────────────────────┤
+  │ 接入端口   │ GE0/0/16                  │
+  └────────────┴───────────────────────────┘
+
+  路径
+
+  1. DK-IDC-Center (核心交换机 10.92.42.64) → Eth-Trunk3 (成员口 XGE0/0/5, XGE1/0/5)
+  2. DK-35F-A003 (接入交换机 10.92.42.83) → GE0/0/16 → 终端设备
+
+  GE0/0/16 端口没有 LLDP 下游邻居，说明该端口直接连接终端设备，即为最终接入点。
+
+✻ Worked for 1m 5s
+
+!!! 一轮消耗接近20Wtoken
+```
