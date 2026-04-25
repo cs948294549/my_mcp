@@ -1,8 +1,14 @@
 # mcp_server
 ## 安装qwen-code
 ```text
+安装qwen-code
 npm install -g @qwen-code/qwen-code@latest
 qwen --version
+
+安装claude-code
+https://www.runoob.com/claude-code/claude-code-install.html
+npm install -g @anthropic-ai/claude-code
+claude-code --version
 ```
 ## 启动mcp服务
 ```text
@@ -10,10 +16,17 @@ python3 main.py
 ```
 ## 安装mcp方便调用
 ```text
-qwen mcp add --name time-tcp --url http://127.0.0.1:8000/sse
+qwen code安装mcp
+qwen mcp add --name <名称> --url http://127.0.0.1:8000/sse
 
 检查是否成功
 qwen mcp list
+
+claude code安装mcp
+claude mcp add --transport http <名称> http://127.0.0.1:8000/sse
+检查是否成功
+claude mcp list
+
 ```
 
 ## config配置
