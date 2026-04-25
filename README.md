@@ -18,7 +18,6 @@ python3 main.py
 ```text
 qwen code安装mcp
 qwen mcp add --name <名称> --url http://127.0.0.1:8000/sse
-
 检查是否成功
 qwen mcp list
 
