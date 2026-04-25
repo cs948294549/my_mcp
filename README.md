@@ -45,6 +45,9 @@ user_password = {"username": "xxx", "password": "xxx"}
 ```text
 在 ~/.qwen/skills/<技能名英文>/SKILL.md
 qwen启动后会自动读取
+
+在 ~/.claude/skills/<技能名英文>/SKILL.md
+claude启动后会自动读取
 ```
 ## 查找设备位置接入点skill
 ```text
