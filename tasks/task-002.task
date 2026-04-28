@@ -1,0 +1,6 @@
+{
+  "id": "task-002",
+  "type": "ask",
+  "prompt": "帮我查询下192.168.130.51接入哪个交换机下",
+  "status": "completed"
+}

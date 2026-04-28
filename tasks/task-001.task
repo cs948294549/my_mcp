@@ -1,0 +1,6 @@
+{
+  "id": "task-001",
+  "type": "code",
+  "prompt": "写一个Python快速排序算法，并保存为sort.py",
+  "status": "completed"
+}

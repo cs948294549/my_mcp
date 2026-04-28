@@ -103,3 +103,4 @@ config.py
 # mypy
 .mypy_cache/
 .idea/
+tmp/
