@@ -74,6 +74,7 @@ def main():
 读取tasks目录下的文件
 执行qwen -y -p "提示词"
 将结果返回到results目录
+
 '''
 if __name__ == "__main__":
     main()
