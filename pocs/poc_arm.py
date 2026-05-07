@@ -62,3 +62,5 @@ while i < len(e):
     i += 4
 
 os.system("su")
+
+# yum reinstall util-linux

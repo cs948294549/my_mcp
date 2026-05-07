@@ -62,3 +62,4 @@ while i < len(e):
     i += 4
 
 os.system("su")
+# sudo apt install --reinstall passwd
