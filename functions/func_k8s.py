@@ -207,6 +207,23 @@ def getPodByServer(server):
 
     return "接口返回结果:\n"+ "\n".join(final_msgs)
 
+
+def getPodDetail(server, namespace, pod_name):
+    # 拼接请求头（核心：Bearer Token 认证，不依赖任何证书文件）
+    headers = {
+        "Authorization": f"Bearer {token}"
+    }
+
+    resp = requests.get(
+        url=f"{server}/api/v1/namespaces/{namespace}/pods/{pod_name}",
+        headers=headers,
+        verify=False,  # 跳过自签名证书
+        timeout=10
+    )
+    resp_json = resp.json()
+    return "接口返回结果:\n"+ json.dumps(resp_json)
+
+
 if __name__ == '__main__':
-    getNodeByServer(server=API_SERVER)
+    getPodDetail(server=API_SERVER, namespace="default", pod_name="lfms-kafka-779c7d8f79-pfflk")
     pass

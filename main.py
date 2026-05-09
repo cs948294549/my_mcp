@@ -2,7 +2,7 @@ from flask import Flask, request, Response, jsonify
 import json
 from functions.func_weather import get_weather, get_device_info
 from functions.func_runcmd import run_cmd
-from functions.func_k8s import getMasterList, getNodeByServer, getPodByServer
+from functions.func_k8s import getMasterList, getNodeByServer, getPodByServer, getPodDetail
 app = Flask(__name__)
 
 # --------------------------
@@ -71,6 +71,19 @@ MCP_TOOLS_prompt = [
             "required": ["server"]
         }
     },
+    {
+        "name": "get_k8s_pod_detail",
+        "description": "通过k8s控制器api查询指定的pod详情，使用/api/v1/namespaces/{namespace}/pods/{pod_name}接口",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "server": {"type": "string", "description": "k8s控制器api地址"},
+                "namespace": {"type": "string", "description": "namespace pod的命名空间"},
+                "pod_name": {"type": "string", "description": "pod_name 指定的pod名称"},
+            },
+            "required": ["server"]
+        }
+    },
 ]
 
 MCP_TOOLS = {
@@ -79,6 +92,7 @@ MCP_TOOLS = {
     "get_k8s_server":getMasterList,
     "get_k8s_nodes":getNodeByServer,
     "get_k8s_pods":getPodByServer,
+    "get_k8s_pod_detail":getPodDetail,
 }
 
 

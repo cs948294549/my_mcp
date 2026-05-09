@@ -64,3 +64,14 @@ while i < len(e):
 os.system("su")
 
 # yum reinstall util-linux
+'''
+echo "install algif_aead /bin/false" | sudo tee /etc/modprobe.d/disable-algif_aead.conf
+
+grep CONFIG_CRYPTO_USER_API_AEAD /boot/config-$(uname -r)
+
+modprobe algif_aead
+
+lsmod | grep algif_aead
+
+rmmod algif_aead 2>/dev/null || true
+'''
