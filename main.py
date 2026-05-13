@@ -1,8 +1,11 @@
 from flask import Flask, request, Response, jsonify
 import json
+from functools import wraps
 from functions.func_weather import get_weather, get_device_info
 from functions.func_runcmd import run_cmd
 from functions.func_k8s import getMasterList, getNodeByServer, getPodByServer, getPodDetail
+
+
 app = Flask(__name__)
 
 # --------------------------
@@ -96,10 +99,61 @@ MCP_TOOLS = {
 }
 
 
+# ======================
+# 1. OAuth2 合法令牌（可配置多用户）
+# ======================
+VALID_OAUTH_TOKENS = {
+    "mcp-token-123": {"username": "admin", "user_id": 1},
+}
+
+# ======================
+# 2. OAuth2 认证装饰器
+# ======================
+def oauth2_required(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        auth_header = request.headers.get("Authorization", "")
+        if not auth_header.startswith("Bearer "):
+            return jsonify({"error": "Unauthorized - Bearer token required"}), 401
+
+        token = auth_header.split("Bearer ")[-1].strip()
+        user = VALID_OAUTH_TOKENS.get(token)
+
+        if not user:
+            return jsonify({"error": "Unauthorized - invalid token"}), 401
+
+        # 把用户信息传到视图函数
+        request.user = user
+        return f(*args, **kwargs)
+    return decorated
+
+# ======================
+# 【关键】MCP 标准 OAuth 发现接口（解决 404）
+# ======================
+@app.route("/.well-known/oauth-authorization-server")
+@app.route("/.well-known/openid-configuration")
+def oidc_discovery():
+    base_url = request.host_url.rstrip("/")
+    return {
+        "issuer": base_url,
+        "token_endpoint": f"{base_url}/token",
+        "authorization_endpoint": f"{base_url}/authorize",
+        "response_types_supported": ["token"],
+        "token_endpoint_auth_methods_supported": ["none"],
+    }
+
+@app.route("/.well-known/oauth-protected-resource")
+def oauth_protected_resource():
+    return jsonify({
+        "resource": "mcp-server",
+        "authorization_server": request.host_url + ".well-known/oauth-authorization-server"
+    })
+
 # --------------------------
 # 核心端点
 # --------------------------
 @app.route("/sse", methods=["GET", "POST"])
+@oauth2_required
 def sse_endpoint():
     if request.method == "POST":
         try:
@@ -108,7 +162,7 @@ def sse_endpoint():
             return jsonify({"error": "Invalid JSON"}), 400
 
         resp_data = handle_mcp_request(req_data)
-        print("发送==sse==", resp_data)
+        print(request.user, "发送==sse==", resp_data)
         return jsonify(resp_data)
 
 

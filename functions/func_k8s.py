@@ -225,5 +225,6 @@ def getPodDetail(server, namespace, pod_name):
 
 
 if __name__ == '__main__':
-    getPodDetail(server=API_SERVER, namespace="default", pod_name="lfms-kafka-779c7d8f79-pfflk")
+    a = getPodDetail(server=API_SERVER, namespace="default", pod_name="lfms-kafka-779c7d8f79-pfflk")
+    print(a)
     pass

@@ -21,6 +21,10 @@ qwen mcp add --name <名称> --url http://127.0.0.1:8000/sse
 检查是否成功
 qwen mcp list
 
+--header "Authorization: Bearer mcp-token-123"
+
+qwen mcp remove notion
+
 claude code安装mcp
 claude mcp add --transport http <名称> http://127.0.0.1:8000/sse
 检查是否成功
