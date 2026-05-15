@@ -1,0 +1,907 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>公司网络架构梳理报告</title>
+    <style>
+        :root {
+            --primary: #1a73e8;
+            --primary-light: #e8f0fe;
+            --success: #0d904f;
+            --success-bg: #e6f4ea;
+            --warning: #e37400;
+            --warning-bg: #fef7e0;
+            --danger: #d93025;
+            --danger-bg: #fce8e6;
+            --info: #1967d2;
+            --info-bg: #e8f0fe;
+            --gray-50: #f8f9fa;
+            --gray-100: #f1f3f4;
+            --gray-200: #e8eaed;
+            --gray-300: #dadce0;
+            --gray-600: #80868b;
+            --gray-800: #3c4043;
+            --gray-900: #202124;
+            --shadow-sm: 0 1px 2px rgba(60,64,67,0.1);
+            --shadow-md: 0 1px 3px rgba(60,64,67,0.15), 0 1px 2px rgba(60,64,67,0.1);
+            --shadow-lg: 0 4px 6px rgba(60,64,67,0.1), 0 1px 3px rgba(60,64,67,0.1);
+            --radius: 8px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: var(--gray-100);
+            color: var(--gray-900);
+            line-height: 1.6;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #1a73e8 0%, #0d47a1 100%);
+            color: white;
+            padding: 40px 0;
+            text-align: center;
+            box-shadow: var(--shadow-lg);
+        }
+        .header h1 { font-size: 2rem; font-weight: 600; margin-bottom: 8px; }
+        .header .subtitle { opacity: 0.85; font-size: 0.95rem; }
+        .header .meta {
+            margin-top: 16px;
+            display: flex;
+            justify-content: center;
+            gap: 24px;
+            font-size: 0.85rem;
+            opacity: 0.8;
+        }
+        .header .meta span { display: flex; align-items: center; gap: 4px; }
+
+        .container { max-width: 1400px; margin: 0 auto; padding: 24px; }
+
+        /* Navigation */
+        .nav-bar {
+            background: white;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-md);
+            padding: 12px 24px;
+            margin-bottom: 24px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .nav-bar a {
+            text-decoration: none;
+            color: var(--gray-800);
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+        .nav-bar a:hover { background: var(--primary-light); color: var(--primary); }
+
+        /* Stats Row */
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        .stat-card {
+            background: white;
+            border-radius: var(--radius);
+            padding: 20px;
+            box-shadow: var(--shadow-sm);
+            text-align: center;
+        }
+        .stat-card .number { font-size: 2rem; font-weight: 700; color: var(--primary); }
+        .stat-card .label { font-size: 0.85rem; color: var(--gray-600); margin-top: 4px; }
+
+        /* Section */
+        .section {
+            background: white;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-md);
+            margin-bottom: 24px;
+            overflow: hidden;
+        }
+        .section-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--gray-200);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .section-header h2 { font-size: 1.2rem; font-weight: 600; }
+        .section-header .icon {
+            width: 32px; height: 32px; border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1rem;
+        }
+        .section-body { padding: 24px; }
+        .section-body.no-pad { padding: 0; }
+
+        /* Tables */
+        .table-wrapper { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+        th {
+            background: var(--gray-50);
+            padding: 12px 16px;
+            text-align: left;
+            font-weight: 600;
+            color: var(--gray-800);
+            border-bottom: 2px solid var(--gray-200);
+            white-space: nowrap;
+        }
+        td {
+            padding: 10px 16px;
+            border-bottom: 1px solid var(--gray-200);
+            color: var(--gray-800);
+        }
+        tr:hover td { background: var(--gray-50); }
+        tr:last-child td { border-bottom: none; }
+
+        /* Tags */
+        .tag {
+            display: inline-block;
+            padding: 2px 10px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            white-space: nowrap;
+        }
+        .tag-hw { background: #e8f5e9; color: #2e7d32; }
+        .tag-h3c { background: #fff3e0; color: #e65100; }
+        .tag-fm { background: #e3f2fd; color: #1565c0; }
+        .tag-up { background: var(--success-bg); color: var(--success); }
+        .tag-down { background: var(--danger-bg); color: var(--danger); }
+        .tag-core { background: #ede7f6; color: #5e35b1; }
+        .tag-dist { background: #e0f2f1; color: #00695c; }
+        .tag-acc { background: #fce4ec; color: #c62828; }
+        .tag-mgmt { background: #e8eaf6; color: #283593; }
+
+        /* Risk badges */
+        .risk { display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--gray-200); }
+        .risk:last-child { border-bottom: none; }
+        .risk-badge {
+            flex-shrink: 0;
+            width: 28px; height: 28px;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 700; font-size: 0.8rem; color: white;
+        }
+        .risk-badge.high { background: var(--danger); }
+        .risk-badge.mid { background: var(--warning); }
+        .risk-badge.low { background: var(--primary); }
+        .risk-content h4 { font-size: 0.95rem; font-weight: 600; margin-bottom: 4px; }
+        .risk-content p { font-size: 0.85rem; color: var(--gray-600); }
+        .risk-content .action { font-size: 0.85rem; color: var(--success); font-weight: 500; margin-top: 4px; }
+
+        /* Topology */
+        .topo-container { overflow-x: auto; padding: 24px; }
+        .topo-svg { width: 100%; min-width: 900px; height: auto; }
+
+        /* Device detail */
+        .device-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
+            gap: 16px;
+        }
+        .device-card {
+            border: 1px solid var(--gray-200);
+            border-radius: var(--radius);
+            padding: 16px;
+            transition: box-shadow 0.2s;
+        }
+        .device-card:hover { box-shadow: var(--shadow-md); }
+        .device-card h4 { font-size: 0.95rem; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+        .device-card .info-row { display: flex; justify-content: space-between; padding: 4px 0; font-size: 0.85rem; border-bottom: 1px dashed var(--gray-200); }
+        .device-card .info-row:last-child { border-bottom: none; }
+        .device-card .info-label { color: var(--gray-600); }
+        .device-card .info-value { font-weight: 500; color: var(--gray-900); }
+
+        /* VLAN colors */
+        .vlan-92 { border-left: 3px solid #7c4dff; }
+        .vlan-110 { border-left: 3px solid #2196f3; }
+        .vlan-120 { border-left: 3px solid #4caf50; }
+        .vlan-130 { border-left: 3px solid #ff9800; }
+        .vlan-140 { border-left: 3px solid #f44336; }
+        .vlan-160 { border-left: 3px solid #00bcd4; }
+        .vlan-170 { border-left: 3px solid #9c27b0; }
+
+        /* Link table */
+        .link-arrow { color: var(--primary); font-weight: 700; }
+
+        /* Collapsible */
+        .collapsible-header {
+            cursor: pointer;
+            user-select: none;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .collapsible-header::after { content: '▼'; font-size: 0.7rem; transition: transform 0.3s; }
+        .collapsible-header.collapsed::after { transform: rotate(-90deg); }
+
+        /* Print */
+        @media print {
+            .nav-bar { display: none; }
+            .section { break-inside: avoid; }
+            body { background: white; }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container { padding: 12px; }
+            .header { padding: 24px 0; }
+            .header h1 { font-size: 1.4rem; }
+            .stats-row { grid-template-columns: repeat(2, 1fr); }
+            .device-grid { grid-template-columns: 1fr; }
+            .header .meta { flex-direction: column; gap: 4px; }
+        }
+
+        /* Port table */
+        .port-table { font-size: 0.8rem; }
+        .port-table td, .port-table th { padding: 6px 10px; }
+
+        /* Smooth scroll */
+        html { scroll-behavior: smooth; }
+
+        /* Tooltip */
+        .tooltip { position: relative; cursor: help; }
+        .tooltip:hover::after {
+            content: attr(data-tip);
+            position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%);
+            background: var(--gray-900); color: white; padding: 4px 8px;
+            border-radius: 4px; font-size: 0.75rem; white-space: nowrap; z-index: 10;
+        }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h1>🏢 公司整体网络架构梳理报告</h1>
+    <div class="subtitle">DK大厦 35F + 22F 全量网络设备盘点</div>
+    <div class="meta">
+        <span>📅 排查时间：2025年</span>
+        <span>🔧 设备总数：20台</span>
+        <span>🏭 厂商：HUAWEI / H3C / FutureMatrix</span>
+        <span>📡 排查方法：MCP LLDP逐级发现</span>
+    </div>
+</div>
+
+<div class="container">
+
+    <!-- Nav -->
+    <div class="nav-bar">
+        <a href="#overview">📊 概览</a>
+        <a href="#assets">🖥 设备资产</a>
+        <a href="#vlan">🏷 VLAN网段</a>
+        <a href="#topology">🔗 拓扑图</a>
+        <a href="#links">🔌 链路明细</a>
+        <a href="#acl">🛡 ACL策略</a>
+        <a href="#h3c">📋 H3C详情</a>
+        <a href="#risks">⚠️ 隐患建议</a>
+    </div>
+
+    <!-- Overview Stats -->
+    <div id="overview" class="stats-row">
+        <div class="stat-card">
+            <div class="number">20</div>
+            <div class="label">网络设备总数</div>
+        </div>
+        <div class="stat-card">
+            <div class="number">3</div>
+            <div class="label">设备厂商</div>
+        </div>
+        <div class="stat-card">
+            <div class="number">12</div>
+            <div class="label">VLAN数量</div>
+        </div>
+        <div class="stat-card">
+            <div class="number" style="color:var(--danger)">0</div>
+            <div class="label">ACL安全策略</div>
+        </div>
+        <div class="stat-card">
+            <div class="number" style="color:var(--danger)">4</div>
+            <div class="label">高风险隐患</div>
+        </div>
+        <div class="stat-card">
+            <div class="number" style="color:var(--warning)">6</div>
+            <div class="label">中风险隐患</div>
+        </div>
+    </div>
+
+    <!-- Device Assets -->
+    <div id="assets" class="section">
+        <div class="section-header">
+            <div class="icon" style="background:var(--primary-light);color:var(--primary);">🖥</div>
+            <h2>设备资产台账</h2>
+        </div>
+
+        <!-- Core -->
+        <div class="section-body">
+            <h3 style="margin-bottom:12px;font-size:1rem;color:var(--gray-800);">🔺 核心层 <span class="tag tag-core">2台</span></h3>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr><th>设备名</th><th>IP地址</th><th>型号</th><th>厂商</th><th>软件版本</th><th>角色</th><th>状态</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>DK-IDC-Center</strong></td>
+                            <td><code>10.92.42.64</code></td>
+                            <td>S6730S-S24X6Q-A</td>
+                            <td><span class="tag tag-hw">HUAWEI</span></td>
+                            <td>V200R022C10SPC500</td>
+                            <td><span class="tag tag-core">35F核心</span> 双主控</td>
+                            <td><span class="tag tag-up">● 运行39周</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>DK-22F-Office-Center</strong></td>
+                            <td><code>10.92.42.90</code></td>
+                            <td>S6730S-S24X6Q-A</td>
+                            <td><span class="tag tag-hw">HUAWEI</span></td>
+                            <td>V200R022C10SPC500</td>
+                            <td><span class="tag tag-core">22F核心</span> 双主控</td>
+                            <td><span class="tag tag-up">● 运行26周</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Distribution -->
+        <div class="section-body" style="border-top:1px solid var(--gray-200);">
+            <h3 style="margin-bottom:12px;font-size:1rem;color:var(--gray-800);">🔶 汇聚/服务器层 <span class="tag tag-dist">4台</span></h3>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr><th>设备名</th><th>IP地址</th><th>型号</th><th>厂商</th><th>软件版本</th><th>角色</th><th>状态</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>DK-35F-DC-VMStack</strong></td>
+                            <td><code>10.92.42.66</code></td>
+                            <td>S6730S-S24X6Q-A</td>
+                            <td><span class="tag tag-hw">HUAWEI</span></td>
+                            <td>V200R022C00SPC500</td>
+                            <td><span class="tag tag-dist">业务/VM堆叠</span> 双主控</td>
+                            <td><span class="tag tag-up">● 运行39周</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>DK-35F-DC-VMSack-B</strong></td>
+                            <td><code>10.92.42.67</code></td>
+                            <td>S6730S-S24X6Q-A</td>
+                            <td><span class="tag tag-hw">HUAWEI</span></td>
+                            <td>V200R022C00SPC500</td>
+                            <td><span class="tag tag-dist">业务交换机扩展</span> 双主控</td>
+                            <td><span class="tag tag-up">● 运行24周</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>DK-35F-DC-Management</strong></td>
+                            <td><code>10.92.42.60</code></td>
+                            <td>S5735-L24T4X-QA2</td>
+                            <td><span class="tag tag-hw">HUAWEI</span></td>
+                            <td>V200R022C10SPC500</td>
+                            <td><span class="tag tag-mgmt">带外管理</span></td>
+                            <td><span class="tag tag-up">● 运行22周</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>DK-35F-DC-Management-B</strong></td>
+                            <td><code>10.92.42.61</code></td>
+                            <td>S5735S-L24T4X-QA2</td>
+                            <td><span class="tag tag-hw">HUAWEI</span></td>
+                            <td>V200R022C00SPC500</td>
+                            <td><span class="tag tag-mgmt">带外管理扩展</span></td>
+                            <td><span class="tag tag-up">● 运行37周</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- 35F Access -->
+        <div class="section-body" style="border-top:1px solid var(--gray-200);">
+            <h3 style="margin-bottom:12px;font-size:1rem;color:var(--gray-800);">📍 35F接入层 <span class="tag tag-acc">9台</span></h3>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr><th>设备名</th><th>IP地址</th><th>型号</th><th>厂商</th><th>上联设备</th><th>上联方式</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>DK-35F-A001</td><td><code>10.92.42.81</code></td><td>S5735S-L24T4X-A1</td><td><span class="tag tag-hw">HUAWEI</span></td><td>DK-IDC-Center</td><td>2×10G XGE聚合</td></tr>
+                        <tr><td>DK-35F-A002</td><td><code>10.92.42.82</code></td><td>S5735S-L24T4X-A1</td><td><span class="tag tag-hw">HUAWEI</span></td><td>DK-IDC-Center</td><td>2×10G XGE聚合</td></tr>
+                        <tr><td>DK-35F-A003</td><td><code>10.92.42.83</code></td><td>S5735S-L24T4X-A1</td><td><span class="tag tag-hw">HUAWEI</span></td><td>DK-IDC-Center</td><td>2×10G XGE聚合</td></tr>
+                        <tr><td>DK-35F-A004</td><td><code>10.92.42.84</code></td><td>S5735S-L24T4X-A1</td><td><span class="tag tag-hw">HUAWEI</span></td><td>DK-IDC-Center</td><td>2×10G XGE聚合</td></tr>
+                        <tr><td>DK-35F-A005</td><td><code>10.92.42.85</code></td><td>S5735-L24T4X-A1</td><td><span class="tag tag-hw">HUAWEI</span></td><td>DK-IDC-Center</td><td>2×10G XGE聚合</td></tr>
+                        <tr><td>DK-35F-A006</td><td><code>10.92.42.86</code></td><td>S5735-L24T4X-A1</td><td><span class="tag tag-hw">HUAWEI</span></td><td>DK-IDC-Center</td><td>2×10G XGE聚合</td></tr>
+                        <tr><td>DK-35F-A007</td><td><code>10.92.42.87</code></td><td>S5735S-L24T4X-A1</td><td><span class="tag tag-hw">HUAWEI</span></td><td>DK-IDC-Center</td><td>2×10G XGE聚合</td></tr>
+                        <tr><td>DK-35F-A008</td><td><code>10.92.42.88</code></td><td>S5735S-L24T4X-A1</td><td><span class="tag tag-hw">HUAWEI</span></td><td>DK-IDC-Center</td><td>2×10G XGE聚合</td></tr>
+                        <tr style="background:#fff8e1;">
+                            <td><strong>DK-35F-A009-POE</strong></td>
+                            <td><code>10.92.42.89</code></td>
+                            <td>S5024PV5-EI-HPWR</td>
+                            <td><span class="tag tag-h3c">H3C ⚠</span></td>
+                            <td>DK-35F-A008</td>
+                            <td>1G GE trunk</td>
+                        </tr>
+                        <tr style="background:#e8f5e9;">
+                            <td>DK-35F-Aceess-Office</td>
+                            <td><code>10.92.42.80</code></td>
+                            <td>S5735S-L24T4X-A1</td>
+                            <td><span class="tag tag-fm">FutureMatrix</span></td>
+                            <td>DK-35F-A003</td>
+                            <td>1G GE单线</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- 22F Access -->
+        <div class="section-body" style="border-top:1px solid var(--gray-200);">
+            <h3 style="margin-bottom:12px;font-size:1rem;color:var(--gray-800);">📍 22F接入层 <span class="tag tag-acc">5台</span></h3>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr><th>设备名</th><th>IP地址</th><th>型号</th><th>厂商</th><th>上联设备</th><th>上联方式</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>DK-22F-Area-001</td><td><code>10.92.42.91</code></td><td>S5735-L24T4X-A1</td><td><span class="tag tag-fm">FutureMatrix</span></td><td>DK-22F-Office-Center</td><td>2×10G XGE聚合</td></tr>
+                        <tr><td>DK-22F-Area-002</td><td><code>10.92.42.92</code></td><td>S5735-L24T4X-A1</td><td><span class="tag tag-fm">FutureMatrix</span></td><td>DK-22F-Office-Center</td><td>2×10G XGE聚合</td></tr>
+                        <tr><td>DK-22F-Area-003</td><td><code>10.92.42.93</code></td><td>S5735-L24T4X-A1</td><td><span class="tag tag-fm">FutureMatrix</span></td><td>DK-22F-Office-Center</td><td>2×10G XGE聚合</td></tr>
+                        <tr><td>DK-22F-Area-004</td><td><code>10.92.42.94</code></td><td>S5735-L24T4X-A1</td><td><span class="tag tag-fm">FutureMatrix</span></td><td>DK-22F-Office-Center</td><td>2×10G XGE聚合</td></tr>
+                        <tr><td>DK-22F-Area-005</td><td><code>10.92.42.95</code></td><td>S5735-L24T4X-A1</td><td><span class="tag tag-fm">FutureMatrix</span></td><td>DK-22F-Office-Center</td><td>2×10G XGE聚合</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Vendor Summary -->
+        <div class="section-body" style="border-top:1px solid var(--gray-200);">
+            <h3 style="margin-bottom:12px;font-size:1rem;">📊 厂商分布</h3>
+            <div style="display:flex;gap:24px;flex-wrap:wrap;">
+                <div style="display:flex;align-items:center;gap:8px;">
+                    <div style="width:120px;height:24px;background:linear-gradient(90deg,#4caf50 80%,#ddd 80%);border-radius:4px;"></div>
+                    <span style="font-size:0.85rem;"><span class="tag tag-hw">HUAWEI</span> 16台 (80%)</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:8px;">
+                    <div style="width:120px;height:24px;background:linear-gradient(90deg,#2196f3 15%,#ddd 15%);border-radius:4px;"></div>
+                    <span style="font-size:0.85rem;"><span class="tag tag-fm">FutureMatrix</span> 3台 (15%)</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:8px;">
+                    <div style="width:120px;height:24px;background:linear-gradient(90deg,#ff9800 5%,#ddd 5%);border-radius:4px;"></div>
+                    <span style="font-size:0.85rem;"><span class="tag tag-h3c">H3C</span> 1台 (5%)</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- VLAN -->
+    <div id="vlan" class="section">
+        <div class="section-header">
+            <div class="icon" style="background:#e8f5e9;color:#2e7d32;">🏷</div>
+            <h2>VLAN-IP网段对照表</h2>
+        </div>
+        <div class="section-body no-pad">
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr><th>VLAN ID</th><th>网段</th><th>网关IP</th><th>用途</th><th>关键终端/备注</th><th>涉及设备</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr class="vlan-92"><td><strong>VLAN 92</strong></td><td><code>10.92.42.0/24</code></td><td>—</td><td>带外管理网段</td><td>全部网络设备管理口</td><td>全部20台设备</td></tr>
+                        <tr><td><strong>VLAN 100</strong></td><td><code>10.72.1.0/30</code></td><td><code>10.72.1.1</code></td><td>上联互联网（主）</td><td>DK-IDC-Center (.2)</td><td>DK-IDC-Center</td></tr>
+                        <tr><td><strong>VLAN 101</strong></td><td><code>10.74.1.0/30</code></td><td>—</td><td>上联互联网（备）</td><td>当前DOWN状态</td><td>DK-IDC-Center</td></tr>
+                        <tr><td><strong>VLAN 102</strong></td><td>未确认</td><td>—</td><td>业务/VM网络</td><td>10.92.42.74</td><td>VMStack / VMSack-B</td></tr>
+                        <tr><td><strong>VLAN 104</strong></td><td>未确认</td><td>—</td><td>业务/VM网络</td><td>10.92.42.75</td><td>VMStack / VMSack-B</td></tr>
+                        <tr class="vlan-110"><td><strong>VLAN 110</strong></td><td><code>192.168.110.0/24</code></td><td><code>192.168.110.1</code></td><td>办公网络</td><td>大量办公终端</td><td>核心+大部分接入交换机</td></tr>
+                        <tr class="vlan-120"><td><strong>VLAN 120</strong></td><td><code>192.168.120.0/24</code></td><td><code>192.168.120.254</code></td><td>业务网络</td><td>大量业务终端</td><td>核心+大部分接入交换机</td></tr>
+                        <tr class="vlan-130"><td><strong>VLAN 130</strong></td><td><code>192.168.130.0/24</code></td><td><code>192.168.130.254</code></td><td>业务网络</td><td>大量业务终端</td><td>核心+部分接入交换机</td></tr>
+                        <tr class="vlan-140"><td><strong>VLAN 140</strong></td><td><code>192.168.140.0/24</code></td><td><code>192.168.140.254</code></td><td>监控/安防网络</td><td>海康威视设备、终端</td><td>核心+部分接入交换机</td></tr>
+                        <tr class="vlan-160"><td><strong>VLAN 160</strong></td><td><code>192.168.160.0/24</code></td><td><code>192.168.160.254</code></td><td>服务器网络</td><td>10.92.42.70</td><td>核心+VMStack</td></tr>
+                        <tr class="vlan-170"><td><strong>VLAN 170</strong></td><td><code>192.168.170.0/24</code></td><td><code>192.168.170.254</code></td><td>服务器网络</td><td>10.92.42.72</td><td>核心+VMStack</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Topology -->
+    <div id="topology" class="section">
+        <div class="section-header">
+            <div class="icon" style="background:#ede7f6;color:#5e35b1;">🔗</div>
+            <h2>网络拓扑图</h2>
+        </div>
+        <div class="section-body">
+            <div class="topo-container">
+                <svg class="topo-svg" viewBox="0 0 1100 780" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <marker id="arrow" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-auto">
+                            <path d="M 0 0 L 10 5 L 0 10 z" fill="#1a73e8"/>
+                        </marker>
+                        <filter id="shadow" x="-5%" y="-5%" width="110%" height="115%">
+                            <feDropShadow dx="0" dy="1" stdDeviation="2" flood-opacity="0.15"/>
+                        </filter>
+                    </defs>
+
+                    <!-- Internet -->
+                    <rect x="440" y="10" width="220" height="44" rx="22" fill="#d93025" filter="url(#shadow)"/>
+                    <text x="550" y="38" text-anchor="middle" fill="white" font-size="13" font-weight="600">🌐 出口路由器 10.72.1.1</text>
+
+                    <!-- Uplink line -->
+                    <line x1="550" y1="54" x2="550" y2="90" stroke="#d93025" stroke-width="2" stroke-dasharray="6,3"/>
+                    <text x="570" y="74" fill="#d93025" font-size="10">Vlanif100 主链路</text>
+
+                    <!-- Core - 35F -->
+                    <rect x="280" y="90" width="220" height="56" rx="8" fill="#1a73e8" filter="url(#shadow)"/>
+                    <text x="390" y="114" text-anchor="middle" fill="white" font-size="12" font-weight="700">DK-IDC-Center</text>
+                    <text x="390" y="132" text-anchor="middle" fill="#bbdefb" font-size="10">10.92.42.64 | 35F核心</text>
+
+                    <!-- Core - 22F -->
+                    <rect x="600" y="90" width="220" height="56" rx="8" fill="#1a73e8" filter="url(#shadow)"/>
+                    <text x="710" y="114" text-anchor="middle" fill="white" font-size="12" font-weight="700">DK-22F-Office-Center</text>
+                    <text x="710" y="132" text-anchor="middle" fill="#bbdefb" font-size="10">10.92.42.90 | 22F核心</text>
+
+                    <!-- Core interconnect -->
+                    <line x1="500" y1="112" x2="600" y2="112" stroke="#1565c0" stroke-width="3"/>
+                    <line x1="500" y1="124" x2="600" y2="124" stroke="#1565c0" stroke-width="3"/>
+                    <rect x="505" y="100" width="90" height="16" rx="3" fill="#e3f2fd"/>
+                    <text x="550" y="111" text-anchor="middle" fill="#1565c0" font-size="8" font-weight="600">2×10G Eth-Trunk22</text>
+
+                    <!-- Distribution Layer -->
+                    <!-- VMStack -->
+                    <rect x="100" y="200" width="200" height="50" rx="8" fill="#00897b" filter="url(#shadow)"/>
+                    <text x="200" y="222" text-anchor="middle" fill="white" font-size="11" font-weight="600">DK-35F-DC-VMStack</text>
+                    <text x="200" y="238" text-anchor="middle" fill="#b2dfdb" font-size="9">10.92.42.66 | 业务/VM</text>
+
+                    <!-- VMSack-B -->
+                    <rect x="100" y="268" width="200" height="50" rx="8" fill="#00897b" filter="url(#shadow)"/>
+                    <text x="200" y="290" text-anchor="middle" fill="white" font-size="11" font-weight="600">DK-35F-DC-VMSack-B</text>
+                    <text x="200" y="306" text-anchor="middle" fill="#b2dfdb" font-size="9">10.92.42.67 | 业务扩展</text>
+
+                    <!-- Stack line -->
+                    <line x1="200" y1="250" x2="200" y2="268" stroke="#4db6ac" stroke-width="2" stroke-dasharray="4,2"/>
+                    <text x="210" y="262" fill="#4db6ac" font-size="8">40G堆叠</text>
+
+                    <!-- DC-Mgmt -->
+                    <rect x="340" y="200" width="200" height="50" rx="8" fill="#5c6bc0" filter="url(#shadow)"/>
+                    <text x="440" y="222" text-anchor="middle" fill="white" font-size="11" font-weight="600">DK-35F-DC-Management</text>
+                    <text x="440" y="238" text-anchor="middle" fill="#c5cae9" font-size="9">10.92.42.60 | 带外管理</text>
+
+                    <!-- DC-Mgmt-B -->
+                    <rect x="340" y="268" width="200" height="50" rx="8" fill="#5c6bc0" filter="url(#shadow)"/>
+                    <text x="440" y="290" text-anchor="middle" fill="white" font-size="11" font-weight="600">DK-35F-DC-Management-B</text>
+                    <text x="440" y="306" text-anchor="middle" fill="#c5cae9" font-size="9">10.92.42.61 | 管理扩展</text>
+
+                    <!-- Core to distribution lines -->
+                    <line x1="340" y1="146" x2="200" y2="200" stroke="#78909c" stroke-width="1.5"/>
+                    <line x1="390" y1="146" x2="440" y2="200" stroke="#78909c" stroke-width="1.5"/>
+
+                    <!-- 35F Access Layer Box -->
+                    <rect x="60" y="360" width="480" height="180" rx="10" fill="none" stroke="#90a4ae" stroke-width="2" stroke-dasharray="6,3"/>
+                    <text x="80" y="382" fill="#607d8b" font-size="12" font-weight="700">📍 35F 接入层</text>
+
+                    <!-- A001-A004 -->
+                    <rect x="80" y="395" width="110" height="38" rx="6" fill="#ef5350" filter="url(#shadow)"/>
+                    <text x="135" y="418" text-anchor="middle" fill="white" font-size="10" font-weight="600">A001 ~ A004</text>
+                    <line x1="135" y1="433" x2="330" y2="146" stroke="#ef5350" stroke-width="1.5"/>
+
+                    <!-- A005-A008 -->
+                    <rect x="205" y="395" width="110" height="38" rx="6" fill="#ef5350" filter="url(#shadow)"/>
+                    <text x="260" y="418" text-anchor="middle" fill="white" font-size="10" font-weight="600">A005 ~ A008</text>
+                    <line x1="260" y1="433" x2="360" y2="146" stroke="#ef5350" stroke-width="1.5"/>
+
+                    <!-- A009-POE -->
+                    <rect x="330" y="395" width="110" height="38" rx="6" fill="#ff9800" filter="url(#shadow)"/>
+                    <text x="385" y="412" text-anchor="middle" fill="white" font-size="9" font-weight="600">A009-POE</text>
+                    <text x="385" y="424" text-anchor="middle" fill="#fff3e0" font-size="8">H3C</text>
+                    <line x1="330" y1="414" x2="315" y2="414" stroke="#ff9800" stroke-width="1.5"/>
+                    <text x="322" y="410" fill="#ff9800" font-size="7">GE</text>
+
+                    <!-- Aceess-Office -->
+                    <rect x="210" y="450" width="130" height="38" rx="6" fill="#66bb6a" filter="url(#shadow)"/>
+                    <text x="275" y="468" text-anchor="middle" fill="white" font-size="9" font-weight="600">Aceess-Office</text>
+                    <text x="275" y="480" text-anchor="middle" fill="#c8e6c9" font-size="8">FutureMatrix</text>
+                    <line x1="210" y1="469" x2="190" y2="420" stroke="#66bb6a" stroke-width="1.5"/>
+                    <text x="176" y="445" fill="#66bb6a" font-size="7">GE</text>
+
+                    <!-- 22F Access Layer Box -->
+                    <rect x="570" y="360" width="400" height="180" rx="10" fill="none" stroke="#90a4ae" stroke-width="2" stroke-dasharray="6,3"/>
+                    <text x="590" y="382" fill="#607d8b" font-size="12" font-weight="700">📍 22F 接入层</text>
+
+                    <!-- 22F devices -->
+                    <rect x="590" y="395" width="95" height="38" rx="6" fill="#42a5f5" filter="url(#shadow)"/>
+                    <text x="637" y="418" text-anchor="middle" fill="white" font-size="9" font-weight="600">Area-001</text>
+                    <line x1="637" y1="433" x2="680" y2="146" stroke="#42a5f5" stroke-width="1.5"/>
+
+                    <rect x="700" y="395" width="95" height="38" rx="6" fill="#42a5f5" filter="url(#shadow)"/>
+                    <text x="747" y="418" text-anchor="middle" fill="white" font-size="9" font-weight="600">Area-002</text>
+                    <line x1="747" y1="433" x2="700" y2="146" stroke="#42a5f5" stroke-width="1.5"/>
+
+                    <rect x="810" y="395" width="95" height="38" rx="6" fill="#42a5f5" filter="url(#shadow)"/>
+                    <text x="857" y="418" text-anchor="middle" fill="white" font-size="9" font-weight="600">Area-003</text>
+                    <line x1="857" y1="433" x2="720" y2="146" stroke="#42a5f5" stroke-width="1.5"/>
+
+                    <rect x="590" y="450" width="95" height="38" rx="6" fill="#42a5f5" filter="url(#shadow)"/>
+                    <text x="637" y="473" text-anchor="middle" fill="white" font-size="9" font-weight="600">Area-004</text>
+                    <line x1="637" y1="450" x2="740" y2="146" stroke="#42a5f5" stroke-width="1.5"/>
+
+                    <rect x="700" y="450" width="95" height="38" rx="6" fill="#42a5f5" filter="url(#shadow)"/>
+                    <text x="747" y="473" text-anchor="middle" fill="white" font-size="9" font-weight="600">Area-005</text>
+                    <line x1="747" y1="450" x2="760" y2="146" stroke="#42a5f5" stroke-width="1.5"/>
+
+                    <!-- Management Box -->
+                    <rect x="570" y="200" width="200" height="50" rx="8" fill="#7e57c2" filter="url(#shadow)"/>
+                    <text x="670" y="222" text-anchor="middle" fill="white" font-size="11" font-weight="600">VLAN 92 管理网段</text>
+                    <text x="670" y="238" text-anchor="middle" fill="#d1c4e9" font-size="9">10.92.42.0/24</text>
+
+                    <!-- Legend -->
+                    <rect x="60" y="570" width="910" height="100" rx="8" fill="#f5f5f5"/>
+                    <text x="80" y="595" fill="#333" font-size="12" font-weight="700">图例：</text>
+                    <rect x="80" y="608" width="16" height="12" rx="2" fill="#1a73e8"/><text x="102" y="618" fill="#333" font-size="10">核心交换机</text>
+                    <rect x="190" y="608" width="16" height="12" rx="2" fill="#00897b"/><text x="212" y="618" fill="#333" font-size="10">汇聚/业务交换机</text>
+                    <rect x="340" y="608" width="16" height="12" rx="2" fill="#5c6bc0"/><text x="362" y="618" fill="#333" font-size="10">管理交换机</text>
+                    <rect x="450" y="608" width="16" height="12" rx="2" fill="#ef5350"/><text x="472" y="618" fill="#333" font-size="10">35F接入(HUAWEI)</text>
+                    <rect x="600" y="608" width="16" height="12" rx="2" fill="#42a5f5"/><text x="622" y="618" fill="#333" font-size="10">22F接入(FutureMatrix)</text>
+                    <rect x="780" y="608" width="16" height="12" rx="2" fill="#ff9800"/><text x="802" y="618" fill="#333" font-size="10">H3C设备</text>
+                    <text x="80" y="645" fill="#666" font-size="10">━━━ 实线: 10G/40G 高速链路</text>
+                    <text x="280" y="645" fill="#666" font-size="10">┄┄┄ 虚线: 管理/堆叠链路</text>
+                    <text x="480" y="645" fill="#666" font-size="10">━━━ 红线: 互联网出口</text>
+                </svg>
+            </div>
+        </div>
+    </div>
+
+    <!-- Link Details -->
+    <div id="links" class="section">
+        <div class="section-header">
+            <div class="icon" style="background:#e3f2fd;color:#1565c0;">🔌</div>
+            <h2>关键链路明细</h2>
+        </div>
+        <div class="section-body no-pad">
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr><th>连接</th><th>本端接口</th><th>对端接口</th><th>带宽</th><th>链路类型</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>DK-IDC-Center ↔ DK-22F-Office-Center</td><td>XGE0/0/19 + XGE1/0/19</td><td>XGE0/0/23 + XGE0/0/24</td><td><strong>2×10G</strong> Eth-Trunk22</td><td>Eth-Trunk (TAG VLAN)</td></tr>
+                        <tr><td>DK-IDC-Center ↔ DK-35F-DC-VMStack</td><td>XGE0/0/1~2</td><td>XGE0/0/1~2</td><td>2×10G</td><td>业务上联</td></tr>
+                        <tr><td>DK-IDC-Center ↔ DK-35F-DC-Management</td><td>XGE0/0/3</td><td>XGE0/0/1</td><td>10G</td><td>管理上联</td></tr>
+                        <tr><td>DK-IDC-Center ↔ DK-35F-DC-Management-B</td><td>XGE0/0/4</td><td>XGE0/0/4</td><td>10G</td><td>管理上联</td></tr>
+                        <tr><td>DK-IDC-Center ↔ DK-35F-A001~A008</td><td>Eth-Trunk1~8</td><td>各2条XGE</td><td>2×10G/台</td><td>接入上联</td></tr>
+                        <tr><td>DK-22F-Office-Center ↔ DK-22F-Area-001~005</td><td>Eth-Trunk1~5</td><td>各2条XGE</td><td>2×10G/台</td><td>接入上联</td></tr>
+                        <tr><td>DK-35F-DC-VMStack ↔ DK-35F-DC-VMSack-B</td><td>40GE0/0/6</td><td>40GE0/0/6</td><td><strong>40G</strong></td><td>堆叠互联</td></tr>
+                        <tr><td>DK-35F-DC-VMStack ↔ DK-35F-DC-Management</td><td>XGE0/0/7</td><td>XGE0/0/7</td><td>10G</td><td>管理上联</td></tr>
+                        <tr><td>DK-35F-DC-VMStack ↔ DK-35F-DC-Management-B</td><td>XGE0/0/5</td><td>XGE0/0/7</td><td>10G</td><td>管理上联</td></tr>
+                        <tr><td>DK-35F-DC-VMSack-B ↔ DK-35F-DC-Management-B</td><td>MEth0/0/1</td><td>GE1/0/21</td><td>带外管理口</td><td>带外管理</td></tr>
+                        <tr style="background:#fff8e1;"><td><strong>DK-35F-A008 ↔ DK-35F-A009-POE</strong></td><td>GE0/0/2</td><td>GE1/0/28</td><td>1G trunk</td><td>POE接入级联</td></tr>
+                        <tr><td>DK-35F-A003 ↔ DK-35F-Aceess-Office</td><td>GE0/0/24</td><td>GE0/0/24</td><td>1G</td><td>办公接入级联</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ACL -->
+    <div id="acl" class="section">
+        <div class="section-header">
+            <div class="icon" style="background:var(--danger-bg);color:var(--danger);">🛡</div>
+            <h2>ACL安全策略</h2>
+        </div>
+        <div class="section-body" style="text-align:center;padding:40px;">
+            <div style="font-size:3rem;margin-bottom:12px;">🚨</div>
+            <h3 style="color:var(--danger);margin-bottom:8px;">未配置任何ACL安全策略</h3>
+            <p style="color:var(--gray-600);max-width:600px;margin:0 auto;">已查询全部20台设备，均未发现ACL配置。VLAN间无访问控制，所有网段可任意互访，存在严重安全隐患。</p>
+        </div>
+    </div>
+
+    <!-- H3C Detail -->
+    <div id="h3c" class="section">
+        <div class="section-header">
+            <div class="icon" style="background:#fff3e0;color:#e65100;">📋</div>
+            <h2>DK-35F-A009-POE（H3C）详细信息</h2>
+        </div>
+        <div class="section-body">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;">
+                <div>
+                    <h3 style="font-size:1rem;margin-bottom:12px;">基本信息</h3>
+                    <div class="device-card">
+                        <div class="info-row"><span class="info-label">设备名</span><span class="info-value">DK-35F-A009-POE</span></div>
+                        <div class="info-row"><span class="info-label">IP地址</span><span class="info-value"><code>10.92.42.89</code></span></div>
+                        <div class="info-row"><span class="info-label">管理VLAN</span><span class="info-value">VLAN 92</span></div>
+                        <div class="info-row"><span class="info-label">型号</span><span class="info-value">H3C S5024PV5-EI-HPWR</span></div>
+                        <div class="info-row"><span class="info-label">序列号</span><span class="info-value">219801A2KV9247Q001GQ</span></div>
+                        <div class="info-row"><span class="info-label">MAC地址</span><span class="info-value">94A6-D8EF-3860</span></div>
+                        <div class="info-row"><span class="info-label">软件版本</span><span class="info-value">Comware V7.1.070 R6351P06</span></div>
+                        <div class="info-row"><span class="info-label">出厂日期</span><span class="info-value">2024-07-30</span></div>
+                        <div class="info-row"><span class="info-label">运行时间</span><span class="info-value">39周3天</span></div>
+                        <div class="info-row"><span class="info-label">上联设备</span><span class="info-value">DK-35F-A008 (GE1/0/28→GE0/0/2)</span></div>
+                        <div class="info-row"><span class="info-label">VLAN</span><span class="info-value">1, 92, 110, 140</span></div>
+                    </div>
+                </div>
+                <div>
+                    <h3 style="font-size:1rem;margin-bottom:12px;">端口分配</h3>
+                    <div class="table-wrapper">
+                        <table class="port-table">
+                            <thead>
+                                <tr><th>端口范围</th><th>PVID</th><th>速率</th><th>状态</th><th>用途推测</th></tr>
+                            </thead>
+                            <tbody>
+                                <tr><td>GE1/0/1 ~ GE1/0/8</td><td><span class="tag" style="background:#fce4ec;color:#c62828;">VLAN 140</span></td><td>100M</td><td><span class="tag tag-up">UP</span></td><td>监控/安防终端</td></tr>
+                                <tr><td>GE1/0/9 ~ GE1/0/20</td><td><span class="tag" style="background:#e3f2fd;color:#1565c0;">VLAN 110</span></td><td>1G/100M</td><td><span class="tag tag-up">部分UP</span></td><td>办公终端</td></tr>
+                                <tr style="background:#fff8e1;"><td>GE1/0/18</td><td><span class="tag" style="background:#fce4ec;color:#c62828;">VLAN 140</span></td><td>1G</td><td><span class="tag tag-up">UP</span></td><td><strong>Hikvision lan1 uplink</strong></td></tr>
+                                <tr><td>GE1/0/21 ~ GE1/0/24</td><td><span class="tag" style="background:#ede7f6;color:#5e35b1;">VLAN 92</span></td><td>—</td><td><span class="tag tag-down">DOWN</span></td><td>预留管理口</td></tr>
+                                <tr><td>GE1/0/25 ~ GE1/0/27</td><td>VLAN 1</td><td>—</td><td><span class="tag tag-down">DOWN</span></td><td>预留</td></tr>
+                                <tr style="background:#e8f5e9;"><td><strong>GE1/0/28</strong></td><td><span class="tag tag-dist">Trunk</span></td><td>1G</td><td><span class="tag tag-up">UP</span></td><td><strong>上联DK-35F-A008</strong></td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div style="margin-top:12px;padding:10px;background:#fff3e0;border-radius:6px;font-size:0.85rem;">
+                        <strong>⚠️ 注意：</strong>H3C设备LLDP命令为 <code>dis lldp nei list</code>（非华为 <code>dis lldp nei brie</code>），VLAN查询使用 <code>dis vlan</code>（<code>dis vlan brief</code> 不支持）。
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Risks -->
+    <div id="risks" class="section">
+        <div class="section-header">
+            <div class="icon" style="background:var(--danger-bg);color:var(--danger);">⚠️</div>
+            <h2>现存隐患及优化整改建议</h2>
+        </div>
+        <div class="section-body">
+
+            <h3 style="margin-bottom:12px;color:var(--danger);">🔴 高风险隐患</h3>
+
+            <div class="risk">
+                <div class="risk-badge high">1</div>
+                <div class="risk-content">
+                    <h4>出口单点故障</h4>
+                    <p>仅Vlanif100（10.72.1.0/30→10.72.1.1）一条出口链路活跃，Vlanif101备用链路DOWN。一旦主链路故障，全公司互联网中断。</p>
+                    <div class="action">✅ 建议：排查备用链路故障原因，确保主备切换机制正常运行</div>
+                </div>
+            </div>
+
+            <div class="risk">
+                <div class="risk-badge high">2</div>
+                <div class="risk-content">
+                    <h4>无ACL安全策略</h4>
+                    <p>全网20台设备均未配置任何ACL/VLAN间访问控制策略，所有VLAN可任意互访，缺乏安全隔离。</p>
+                    <div class="action">✅ 建议：按业务需求在核心/汇聚层部署VLAN间ACL策略，实现最小权限访问控制</div>
+                </div>
+            </div>
+
+            <div class="risk">
+                <div class="risk-badge high">3</div>
+                <div class="risk-content">
+                    <h4>堆叠异常告警</h4>
+                    <p>DK-35F-DC-VMStack显示"Warning: The stack system has not been restored"，堆叠系统可能存在状态不一致风险。</p>
+                    <div class="action">✅ 建议：检查堆叠配置和健康状态，必要时重建堆叠</div>
+                </div>
+            </div>
+
+            <div class="risk">
+                <div class="risk-badge high">4</div>
+                <div class="risk-content">
+                    <h4>管理网段暴露</h4>
+                    <p>VLAN 120（192.168.120.0/24）上存在大量网络设备管理ARP，业务VLAN承载管理流量，隔离不清晰。</p>
+                    <div class="action">✅ 建议：确认VLAN 120用途，将网络设备管理口统一收敛到VLAN 92</div>
+                </div>
+            </div>
+
+            <h3 style="margin:20px 0 12px;color:var(--warning);">🟡 中风险隐患</h3>
+
+            <div class="risk">
+                <div class="risk-badge mid">5</div>
+                <div class="risk-content">
+                    <h4>厂商混用（3家）</h4>
+                    <p>HUAWEI 16台 + FutureMatrix 3台 + H3C 1台，命令不兼容，运维复杂度高。</p>
+                    <div class="action">✅ 建议：统一厂商或建立多厂商运维手册，明确各厂商命令差异</div>
+                </div>
+            </div>
+
+            <div class="risk">
+                <div class="risk-badge mid">6</div>
+                <div class="risk-content">
+                    <h4>管理口安全加固不足</h4>
+                    <p>核心设备MEth0/0/1无明显SSH/AAA加固配置，设备管理面暴露风险。</p>
+                    <div class="action">✅ 建议：启用SSH替代Telnet，配置AAA认证、登录ACL</div>
+                </div>
+            </div>
+
+            <div class="risk">
+                <div class="risk-badge mid">7</div>
+                <div class="risk-content">
+                    <h4>DK-35F-Aceess-Office 单链路上联</h4>
+                    <p>仅通过GE0/0/24单线上联至DK-35F-A003，级联口故障影响办公接入。</p>
+                    <div class="action">✅ 建议：增加冗余上联链路，提高接入可靠性</div>
+                </div>
+            </div>
+
+            <div class="risk">
+                <div class="risk-badge mid">8</div>
+                <div class="risk-content">
+                    <h4>DK-35F-A009-POE 单链路上联</h4>
+                    <p>仅通过GE1/0/28 trunk上联至DK-35F-A008，级联口故障影响POE供电和监控设备。</p>
+                    <div class="action">✅ 建议：增加冗余上联链路，确保监控网络高可用</div>
+                </div>
+            </div>
+
+            <div class="risk">
+                <div class="risk-badge mid">9</div>
+                <div class="risk-content">
+                    <h4>光模块告警</h4>
+                    <p>DK-35F-A002等多个设备显示"Physical is up but port local fault"，物理层故障影响业务。</p>
+                    <div class="action">✅ 建议：检查光模块/光纤质量，更换故障模块</div>
+                </div>
+            </div>
+
+            <div class="risk">
+                <div class="risk-badge mid">10</div>
+                <div class="risk-content">
+                    <h4>VLAN网关未启用</h4>
+                    <p>DK-IDC-Center的Vlanif110~170全部DOWN，各VLAN网关可能通过其他设备做路由。</p>
+                    <div class="action">✅ 建议：确认各VLAN网关实际部署位置，确认路由可达性</div>
+                </div>
+            </div>
+
+            <h3 style="margin:20px 0 12px;color:var(--primary);">🟢 低风险 / 优化建议</h3>
+
+            <div class="risk">
+                <div class="risk-badge low">11</div>
+                <div class="risk-content">
+                    <h4>环路风险</h4>
+                    <p>接入层设备间存在环路路径（A003↔A004, A006↔A007↔A008）。</p>
+                    <div class="action">✅ 建议：确认是否配置生成树协议（MSTP/RSTP）防环</div>
+                </div>
+            </div>
+
+            <div class="risk">
+                <div class="risk-badge low">12</div>
+                <div class="risk-content">
+                    <h4>VMStack-B VLAN网关DOWN</h4>
+                    <p>DK-35F-DC-VMSack-B的Vlanif102/104/110/120/130/160/170均为DOWN。</p>
+                    <div class="action">✅ 建议：确认是否为堆叠备设备正常状态</div>
+                </div>
+            </div>
+
+            <div class="risk">
+                <div class="risk-badge low">13</div>
+                <div class="risk-content">
+                    <h4>SSH密钥相同</h4>
+                    <p>部分设备SSH密钥显示相同值（yMNz...==），可能为出厂默认。</p>
+                    <div class="action">✅ 建议：确认是否为出厂默认值，建议首次登录后重新生成密钥</div>
+                </div>
+            </div>
+
+            <div class="risk">
+                <div class="risk-badge low">14</div>
+                <div class="risk-content">
+                    <h4>VLAN 102/104 信息未确认</h4>
+                    <p>VLAN 102、104的网段和用途尚未记录。</p>
+                    <div class="action">✅ 建议：补充记录VLAN 102、104的网段和用途</div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div style="text-align:center;padding:24px;color:var(--gray-600);font-size:0.85rem;">
+        <p>📋 报告生成方式：通过MCP工具从核心层逐级LLDP发现并登录查询全部20台网络设备</p>
+        <p style="margin-top:4px;">⚠️ H3C设备LLDP命令：<code>dis lldp nei list</code> | VLAN查询：<code>dis vlan</code></p>
+    </div>
+
+</div>
+
+</body>
+</html>
