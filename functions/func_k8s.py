@@ -211,7 +211,8 @@ def getPodByServer(server):
 def getPodDetail(server, namespace, pod_name):
     # 拼接请求头（核心：Bearer Token 认证，不依赖任何证书文件）
     headers = {
-        "Authorization": f"Bearer {token}"
+        "Authorization": f"Bearer {token}",
+        # "Accept": "application/yaml"  # 核心：指定返回YAML
     }
 
     resp = requests.get(
@@ -220,8 +221,10 @@ def getPodDetail(server, namespace, pod_name):
         verify=False,  # 跳过自签名证书
         timeout=10
     )
+
     resp_json = resp.json()
     return "接口返回结果:\n"+ json.dumps(resp_json)
+
 
 
 if __name__ == '__main__':

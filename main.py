@@ -152,7 +152,7 @@ def oauth_protected_resource():
 # --------------------------
 # 核心端点
 # --------------------------
-@app.route("/sse", methods=["GET", "POST"])
+@app.route("/mcp", methods=["GET", "POST"])
 @oauth2_required
 def sse_endpoint():
     if request.method == "POST":
