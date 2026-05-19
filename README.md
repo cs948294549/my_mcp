@@ -17,7 +17,7 @@ python3 main.py
 ## 安装mcp方便调用
 ```text
 qwen code安装mcp
-qwen mcp add --name <名称> --url http://127.0.0.1:8000/sse
+qwen mcp add --name <名称> --url http://127.0.0.1:8000/mcp
 检查是否成功
 qwen mcp list
 
@@ -26,7 +26,7 @@ qwen mcp list
 qwen mcp remove notion
 
 claude code安装mcp
-claude mcp add --transport http <名称> http://127.0.0.1:8000/sse
+claude mcp add --header "Authorization: Bearer mcp-token-123" --transport http <名称>  http://127.0.0.1:8000/mcp
 检查是否成功
 claude mcp list
 
@@ -43,7 +43,11 @@ user_password = {"username": "xxx", "password": "xxx"}
 需要准备run_cmd中的接口，方便调用执行命令
 参考项目 https://github.com/cs948294549/agent_exporter 可快速对接
 ```
-
+# 记忆
+```text
+Saved in ~\.qwen\QWEN.md
+可以参照相关文件将配置命令分类写进去，降低命令出错问题
+```
 # skills主备
 ## skill配置方法
 ```text
