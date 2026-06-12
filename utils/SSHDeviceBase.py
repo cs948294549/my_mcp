@@ -4,6 +4,8 @@ import paramiko
 import re
 from abc import ABC, abstractmethod
 import logging
+from io import StringIO
+from config import pkey
 
 logger = logging.getLogger(__name__)
 
@@ -66,9 +68,12 @@ class SSHDeviceBase(ABC):
         self.client = paramiko.SSHClient()
         self.client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 
+        self.pkey = paramiko.RSAKey.from_private_key(StringIO(pkey))
         try:
             self.client.connect(hostname=self.host, port=self.port, username=self.username,
-                                password=self.password, allow_agent=False, look_for_keys=False,
+                                password=self.password,
+                                # allow_agent=False, look_for_keys=False,
+                                pkey=self.pkey,
                                 timeout=self.connect_timeout)
 
             # 创建交互式shell

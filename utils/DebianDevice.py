@@ -6,7 +6,7 @@ logger = logging.getLogger(__name__)
 
 class DebianDevice(SSHDeviceBase):
     def __init__(self, host, username, password):
-        init_prompt = re.compile(r"(.+?:~[$])$")
+        init_prompt = re.compile(r"(.+[$#])$")
 
         self.error_prompts = [
             "found at '^' position",
@@ -28,7 +28,7 @@ class DebianDevice(SSHDeviceBase):
     def _send_command(self, command):
         logger.info("设备{} 配置-执行命令{}".format(self.host, command))
         self.ssh_shell.sendall((command + "\n").encode('utf-8'))
-        reg_prompt = re.compile(r"(.+?:~[$])$")
+        reg_prompt = re.compile(r"(.+[$#])$")
         cmd_cache = ''
         while True:
             try:
@@ -56,3 +56,11 @@ class DebianDevice(SSHDeviceBase):
             except Exception as e:
                 logger.warning("设备{} 执行失败, 执行命令 {}， 失败原因{}".format(self.host, command, str(e)))
                 break
+
+
+if __name__ == '__main__':
+    a = DebianDevice(host="192.168.170.252", username="root", password=None)
+    print(a.current_prompt)
+
+    rst = a.exec_commands(["cd apps","cd mcp_server", "git status"])
+    print("\n".join(rst.values()))
