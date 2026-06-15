@@ -47,6 +47,12 @@
       "headers": {
         "Authorization": "Bearer mcp-token-123"
       }
+    },
+    "local_mcp": {
+      "httpUrl":"https://127.0.0.1:5000/mcp",
+      "headers": {
+        "Authorization": "Bearer mcp-token-123"
+      }
     }
   },
   "mcp": {

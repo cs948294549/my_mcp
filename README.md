@@ -25,6 +25,13 @@ qwen mcp list
 
 qwen mcp remove notion
 
+如果使用https但是没有证书，需要nodejs全局设置tls忽略
+$env:NODE_TLS_REJECT_UNAUTHORIZED=0
+export NODE_TLS_REJECT_UNAUTHORIZED=0
+
+rm env:NODE_TLS_REJECT_UNAUTHORIZED
+
+
 claude code安装mcp
 claude mcp add --header "Authorization: Bearer mcp-token-123" --transport http <名称>  http://127.0.0.1:8000/mcp
 检查是否成功
