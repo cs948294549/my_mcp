@@ -1,110 +1,12 @@
 from flask import Flask, request, Response, jsonify
 import json
 from functools import wraps
-from functions.func_weather import get_weather, get_device_info
-from functions.func_runcmd import run_cmd
-from functions.func_k8s import getMasterList, getNodeByServer, getPodByServer, getPodDetail
+from functions.mcp_interface import MCP_TOOLS, MCP_TOOLS_prompt
+from functions.func_ldap import add_ad_user, delete_user
+from config import VALID_OAUTH_TOKENS
 
 
 app = Flask(__name__)
-
-# --------------------------
-# 状态管理
-# --------------------------
-
-
-# --------------------------
-# MCP 工具定义 (纯手写，不依赖 SDK)
-# --------------------------
-MCP_TOOLS_prompt = [
-    {
-        "name": "run_cmd",
-        "description": "登录交换机设备执行命令，获取执行结果",
-        "inputSchema": {
-            "type": "object",
-            "properties": {
-                "ip": {"type": "string", "description": "交换机IP"},
-                "cmds": {"type": "array", "description": "需要执行的命令列表"},
-                "vendor": {"type": "string", "description": "设备厂商，没有获取到具体的信息就不填"},
-            },
-            "required": ["ip", "cmds"]
-        }
-    },
-    {
-        "name": "get_device_info",
-        "description": "通过设备名或者描述信息，返回匹配的设备列表，获取设备IP地址",
-        "inputSchema": {
-            "type": "object",
-            "properties": {
-                "search_key": {"type": "string", "description": "关键字"},
-            },
-            "required": ["search_key"]
-        }
-    },
-    {
-        "name": "get_k8s_server",
-        "description": "通过设备名或者描述信息，返回k8s控制器api地址",
-        "inputSchema": {
-            "type": "object",
-            "properties": {
-                "search_key": {"type": "string", "description": "关键字"},
-            },
-            "required": ["search_key"]
-        }
-    },
-    {
-        "name": "get_k8s_nodes",
-        "description": "通过k8s控制器api查询k8s集群所有节点信息，使用/api/v1/nodes接口",
-        "inputSchema": {
-            "type": "object",
-            "properties": {
-                "server": {"type": "string", "description": "k8s控制器api地址"},
-            },
-            "required": ["server"]
-        }
-    },
-    {
-        "name": "get_k8s_pods",
-        "description": "通过k8s控制器api查询k8s集群所有pod信息，使用/api/v1/pods接口",
-        "inputSchema": {
-            "type": "object",
-            "properties": {
-                "server": {"type": "string", "description": "k8s控制器api地址"},
-            },
-            "required": ["server"]
-        }
-    },
-    {
-        "name": "get_k8s_pod_detail",
-        "description": "通过k8s控制器api查询指定的pod详情，使用/api/v1/namespaces/{namespace}/pods/{pod_name}接口",
-        "inputSchema": {
-            "type": "object",
-            "properties": {
-                "server": {"type": "string", "description": "k8s控制器api地址"},
-                "namespace": {"type": "string", "description": "namespace pod的命名空间"},
-                "pod_name": {"type": "string", "description": "pod_name 指定的pod名称"},
-            },
-            "required": ["server"]
-        }
-    },
-]
-
-MCP_TOOLS = {
-    "run_cmd": run_cmd,
-    "get_device_info":get_device_info,
-    "get_k8s_server":getMasterList,
-    "get_k8s_nodes":getNodeByServer,
-    "get_k8s_pods":getPodByServer,
-    "get_k8s_pod_detail":getPodDetail,
-}
-
-
-# ======================
-# 1. OAuth2 合法令牌（可配置多用户）
-# ======================
-VALID_OAUTH_TOKENS = {
-    "mcp-token-123": {"username": "admin", "user_id": 1},
-}
 
 # ======================
 # 2. OAuth2 认证装饰器
@@ -153,6 +55,7 @@ def oauth_protected_resource():
 # 核心端点
 # --------------------------
 @app.route("/mcp", methods=["GET", "POST"])
+@app.route("/sse", methods=["GET", "POST"])
 @oauth2_required
 def sse_endpoint():
     if request.method == "POST":
@@ -201,6 +104,61 @@ def handle_mcp_request(req):
     return {"jsonrpc": "2.0", "id": req_id, "error": {"code": -32601, "message": "Not found"}}
 
 
+# --------------------------
+# LDAP业务接口代码
+# --------------------------
+@app.route("/ldap/add_user", methods=["POST"])
+@oauth2_required
+def ldap_add_user():
+    try:
+        data = request.json
+        if not data:
+            return {"code":1, "message": "data is empty", "data": {}}
+
+        username = data.get('username', None)
+        password = data.get('password', None)
+        nickname = data.get('nickname', "未知")
+        full_dn = data.get('full_dn', None)
+        if full_dn is None or username is None or password is None:
+            return {"code": 1, "message": "full_dn is None or username is None or password is None", "data": {}}
+
+        user_info = {
+            "username": username,
+            "password": password,
+            "nickname": nickname,
+        }
+        add_status = add_ad_user(user_info, full_dn)
+        if add_status:
+            return {"code":0, "message": "success", "data": {}}
+        else:
+            return {"code":1, "message": "failed", "data": {}}
+    except Exception as e:
+        return {"code":1, "message": "{}".format(str(e)), "data": {}}
+
+@app.route("/ldap/del_user", methods=["POST"])
+@oauth2_required
+def ldap_del_user():
+    try:
+        data = request.json
+        if not data:
+            return {"code":1, "message": "data is empty", "data": {}}
+
+        username = data.get('username', None)
+        full_dn = data.get('full_dn', None)
+        if full_dn is None or username is None:
+            return {"code": 1, "message": "full_dn is None or username is None ", "data": {}}
+        del_status = delete_user(username)
+        if del_status:
+            return {"code":0, "message": "success", "data": {}}
+        else:
+            return {"code":1, "message": "failed", "data": {}}
+    except Exception as e:
+        return {"code":1, "message": "{}".format(str(e)), "data": {}}
+
 if __name__ == "__main__":
-    print("Starting server on http://0.0.0.0:8000")
-    app.run(host="0.0.0.0", port=8000, debug=True)
+    print("Starting server on http://0.0.0.0:5000")
+    app.run(host="0.0.0.0", port=5000, debug=True)
+    # 加载证书和私钥
+    # print("Starting server on http://0.0.0.0:5000")
+    # ssl_context = ("server.crt", "server.key")
+    # app.run(host="0.0.0.0", port=5000, ssl_context=ssl_context, debug=True)

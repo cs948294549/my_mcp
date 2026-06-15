@@ -40,6 +40,28 @@ def run_cmd(ip, cmds, vendor=None):
     return msgs
 
 
+def serverRunCMD(ip, cmds):
+    filtered_cmds = []
+    for cmd in cmds:
+        if "&" in cmd or "|" in cmd or "kill" in cmd or "rm" in cmd:
+            return f"安全策略限制：命令只能单条执行，或命令未授权，当前命令 '{cmd}' 被拒绝"
+
+        if cmd.lower().startswith('kubectl get') or cmd.lower().startswith(
+                'kubectl describe') or cmd.lower().startswith('grep') or cmd.lower().startswith('cat'):
+            filtered_cmds.append(cmd)
+        else:
+            return f"安全策略限制：只允许执行查询相关的命令，当前命令 '{cmd}' 被拒绝"
+
+    dev = DebianDevice(host=ip, username="root", password=None)
+    ret = dev.exec_commands(cmds)
+    if ret != "failed":
+        _data = ret
+        msgs = "执行参数：\n ip: {}\n cmds:{}\n执行结果:\n{}".format(ip, str(cmds),
+                                                                    "\n".join(_data.values()))
+    else:
+        msgs = "接口调用失败，需要检查服务"
+    return msgs
+
 if __name__ == '__main__':
     aa1 = run_cmd("47.98.235.241",["sudo docker ps -a"], "debian")
     print(aa1)

@@ -1,5 +1,5 @@
 import json
-
+from config import cmdb_token
 
 def get_weather(city):
     return f"{city}：晴天 25°C"
@@ -38,3 +38,40 @@ def get_device_info(search_key):
         return "未查找到设备"
     else:
         return "设备列表："+ json.dumps(find_devs)
+
+import hashlib
+from urllib.parse import urlparse
+import requests
+
+def build_api_key(path, params):
+    values = "".join([str(params[k]) for k in sorted((params or {}).keys())
+                      if k not in ("_key", "_secret") and not isinstance(params[k], (dict, list))])
+    _secret = "".join([path, cmdb_token["secret"], values]).encode("utf-8")
+    params["_secret"] = hashlib.sha1(_secret).hexdigest()
+    params["_key"] = cmdb_token["key"]
+
+    return params
+
+
+def get_ci(payload):
+    ci_url = "https://cmdb.dikong.com/api/v0.1/ci/s"
+
+    payload = build_api_key(urlparse(ci_url).path, payload)
+    ret = requests.get(ci_url, params=payload, verify=False)
+    return ret.json()
+
+
+def get_device_info2(search_key):
+    paylod = {
+        "q": "_type:41,*{}*".format(search_key)
+    }
+    sd = get_ci(paylod)
+    return "设备列表：" + json.dumps(sd, ensure_ascii=False)
+
+if __name__ == '__main__':
+    search_key = "k8s"
+    paylod = {
+        "q": "_type:41,*{}*".format(search_key)
+    }
+    sd = get_ci(paylod)
+    print(sd)
