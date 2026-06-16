@@ -1,5 +1,3 @@
-from turtledemo.clock import jump
-
 from utils.SSHDeviceBase import SSHDeviceBase
 import re
 import logging
