@@ -19,6 +19,54 @@ def _remove_control_characters(text):
     text = ''.join(char for char in text if ord(char) >= 32 or char in '\n\t')
     return text
 
+class JumpDirectConnect:
+    def __init__(self, jump_host, jump_port, jump_user, jump_pwd):
+        self.jump_host = jump_host
+        self.jump_port = jump_port
+        self.jump_user = jump_user
+        self.jump_pwd = jump_pwd
+        self.jump_client = None
+        self.jump_transport = None
+
+    def connect_jump(self):
+        # 登录跳板
+        self.jump_client = paramiko.SSHClient()
+        self.jump_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+
+        private_key = paramiko.RSAKey.from_private_key(StringIO(pkey))
+        # pkey = paramiko.RSAKey.from_private_key_file("/path/id_rsa")
+        # self.jump_client.connect(..., pkey=pkey)
+        self.jump_client.connect(
+            hostname=self.jump_host,
+            port=self.jump_port,
+            username=self.jump_user,
+            password=self.jump_pwd,
+            pkey=private_key,
+            timeout=10
+        )
+        self.jump_transport = self.jump_client.get_transport()
+
+    def get_target_transport(self, target_host, target_port=22):
+        """
+        不创建本地端口，直接打开跳板直连目标的tcp通道
+        返回目标机器的Transport对象，用于执行命令/交互式shell
+        """
+        # 核心：direct-tcpip 直接打通跳板->目标，无本地端口
+        chan = self.jump_transport.open_channel(
+            kind="direct-tcpip",
+            dest_addr=(target_host, target_port),
+            src_addr=("127.0.0.1", 0),
+            timeout=10
+        )
+        # 使用通道作为底层流，新建Transport做目标SSH握手
+        target_trans = paramiko.Transport(chan)
+        target_trans.start_client()
+        return target_trans
+
+    def close(self):
+        if self.jump_client:
+            self.jump_client.close()
+
 
 class SSHDeviceBase(ABC):
     """
@@ -27,7 +75,7 @@ class SSHDeviceBase(ABC):
     必须被继承才能使用，不能单独实例化
     """
 
-    def __init__(self, host, username, password, port=22, connect_timeout=15, timeout=10, init_prompt=None):
+    def __init__(self, host, username, password, port=22, connect_timeout=15, timeout=10, init_prompt=None, jump_host=None, jump_port=None, jump_user="root"):
         """
         初始化SSH连接
 
@@ -51,6 +99,9 @@ class SSHDeviceBase(ABC):
         self.client = None
         self.ssh_shell = None
         self.current_prompt = None
+        self.jump_host = jump_host
+        self.jump_port = jump_port
+        self.jump_user = jump_user
 
         # 先设置init_prompt属性，再调用_establish()
         if init_prompt:
@@ -65,28 +116,57 @@ class SSHDeviceBase(ABC):
         建立SSH连接
         内部方法，由子类继承使用
         """
-        self.client = paramiko.SSHClient()
-        self.client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        if self.jump_host is None:
+            self.client = paramiko.SSHClient()
+            self.client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 
-        self.pkey = paramiko.RSAKey.from_private_key(StringIO(pkey))
-        try:
-            self.client.connect(hostname=self.host, port=self.port, username=self.username,
-                                password=self.password,
-                                # allow_agent=False, look_for_keys=False,
-                                pkey=self.pkey,
-                                timeout=self.connect_timeout)
+            self.pkey = paramiko.RSAKey.from_private_key(StringIO(pkey))
+            try:
+                self.client.connect(hostname=self.host, port=self.port, username=self.username,
+                                    password=self.password,
+                                    # allow_agent=False, look_for_keys=False,
+                                    pkey=self.pkey,
+                                    timeout=self.connect_timeout)
 
-            # 创建交互式shell
-            self.ssh_shell = self.client.invoke_shell(width=300)
-            self.ssh_shell.settimeout(self.timeout)
+                # 创建交互式shell
+                self.ssh_shell = self.client.invoke_shell(width=300)
+                self.ssh_shell.settimeout(self.timeout)
 
-            # 读取初始提示符
-            self._init_terminal()
+                # 读取初始提示符
+                self._init_terminal()
 
-        except Exception as e:
-            print(f"SSH连接失败: {e}")
-            self.close()
-            raise
+            except Exception as e:
+                print(f"SSH连接失败: {e}")
+                self.close()
+                raise
+        else:
+            try:
+                jump = JumpDirectConnect(
+                    jump_host=self.jump_host,
+                    jump_port=self.jump_port,
+                    jump_user=self.jump_user,
+                    jump_pwd=None
+                )
+                jump.connect_jump()
+
+                target_tp = jump.get_target_transport(target_host=self.host, target_port=self.port)
+                # 3. 使用transport登录目标机器
+                # target_pkey = paramiko.RSAKey.from_private_key_file("/path/id_rsa")
+                self.pkey = paramiko.RSAKey.from_private_key(StringIO(pkey))
+                target_tp.auth_publickey(username=self.username, key=self.pkey)
+                # target_tp.auth_password(username="root", password="hYwSm.yVu79aT6G")
+                chan = target_tp.open_session()
+                chan.get_pty()
+                chan.invoke_shell()
+                self.ssh_shell = chan
+                self.ssh_shell.settimeout(self.timeout)
+
+                # 读取初始提示符
+                self._init_terminal()
+            except Exception as e:
+                print(f"跳板机SSH连接失败: {e}")
+                self.close()
+                raise
 
     def _init_terminal(self):
         """

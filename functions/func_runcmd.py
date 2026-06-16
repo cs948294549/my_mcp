@@ -40,7 +40,7 @@ def run_cmd(ip, cmds, vendor=None):
     return msgs
 
 
-def serverRunCMD(ip, cmds):
+def serverRunCMD(ip, cmds, jump_host=None, jump_port=22):
     filtered_cmds = []
     for cmd in cmds:
         if "&" in cmd or "|" in cmd or "kill" in cmd or "rm" in cmd:
@@ -50,15 +50,19 @@ def serverRunCMD(ip, cmds):
                 cmd.lower().startswith('kubectl describe') or
                 cmd.lower().startswith('grep') or
                 cmd.lower().startswith('cat') or
-                cmd.lower().startswith('kubectl top')
+                cmd.lower().startswith('kubectl top') or
+                cmd.lower().startswith('top')
         ):
             filtered_cmds.append(cmd)
         else:
             return f"安全策略限制：只允许执行查询相关的命令，当前命令 '{cmd}' 被拒绝"
 
-    dev = DebianDevice(host=ip, username="root", password=None)
+    if jump_host:
+        dev = DebianDevice(host=ip, username="root", password=None, jump_host=jump_host, jump_port=jump_port)
+    else:
+        dev = DebianDevice(host=ip, username="root", password=None)
     ret = dev.exec_commands(cmds)
-    if ret != "failed":
+    if ret!="failed":
         _data = ret
         msgs = "执行参数：\n ip: {}\n cmds:{}\n执行结果:\n{}".format(ip, str(cmds),
                                                                     "\n".join(_data.values()))
@@ -67,5 +71,5 @@ def serverRunCMD(ip, cmds):
     return msgs
 
 if __name__ == '__main__':
-    aa1 = run_cmd("47.98.235.241",["sudo docker ps -a"], "debian")
+    aa1 = serverRunCMD("192.168.110.201", ["top -bn 1 "])
     print(aa1)

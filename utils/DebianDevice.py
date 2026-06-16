@@ -1,3 +1,5 @@
+from turtledemo.clock import jump
+
 from utils.SSHDeviceBase import SSHDeviceBase
 import re
 import logging
@@ -6,7 +8,7 @@ import time
 logger = logging.getLogger(__name__)
 
 class DebianDevice(SSHDeviceBase):
-    def __init__(self, host, username, password):
+    def __init__(self, host, username, password, jump_host=None, jump_port=None, jump_user="root"):
         init_prompt = re.compile(r"(.+[$#])$")
 
         self.error_prompts = [
@@ -17,7 +19,7 @@ class DebianDevice(SSHDeviceBase):
             "[Y/N]"
         ]
 
-        super().__init__(host, username, password, port=22, connect_timeout=15, timeout=10, init_prompt=init_prompt)
+        super().__init__(host, username, password, port=22, connect_timeout=15, timeout=10, init_prompt=init_prompt, jump_host=jump_host, jump_port=jump_port, jump_user=jump_user)
 
     def _set_terminal(self):
         pass
@@ -69,8 +71,15 @@ class DebianDevice(SSHDeviceBase):
 
 
 if __name__ == '__main__':
-    a = DebianDevice(host="192.168.170.252", username="root", password=None)
-    print(a.current_prompt)
+    # a = DebianDevice(host="192.168.170.252", username="root", password=None)
+    # print(a.current_prompt)
+    #
+    # rst = a.exec_commands(["cd apps","cd mcp_server", "git status"])
+    # print("\n".join(rst.values()))
 
-    rst = a.exec_commands(["cd apps","cd mcp_server", "git status"])
+
+    b = DebianDevice(host="172.30.0.8", username="root", password=None, jump_host="192.168.170.250", jump_port=2201, jump_user="root")
+    print(b.current_prompt)
+
+    rst = b.exec_commands(["hostname"])
     print("\n".join(rst.values()))
