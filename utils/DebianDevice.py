@@ -1,6 +1,7 @@
 from utils.SSHDeviceBase import SSHDeviceBase
 import re
 import logging
+import time
 
 logger = logging.getLogger(__name__)
 
@@ -30,8 +31,17 @@ class DebianDevice(SSHDeviceBase):
         self.ssh_shell.sendall((command + "\n").encode('utf-8'))
         reg_prompt = re.compile(r"(.+[$#])$")
         cmd_cache = ''
+
+        start_time = time.time()
+
         while True:
             try:
+                # 全局总时长超时判定
+                if time.time() - start_time > 10:
+                    # 发送 Ctrl+C 终止远端top等交互式程序
+                    self.ssh_shell.sendall(b"\x03")
+                    time.sleep(0.3)
+                    break
                 line = self.ssh_shell.recv(30000)
                 if line:
                     cmd_cache += line.decode("utf-8", "ignore").replace("\r", "")
