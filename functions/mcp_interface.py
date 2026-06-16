@@ -45,7 +45,7 @@ MCP_TOOLS_prompt = [
     },
     {
         "name": "get_k8s_server",
-        "description": "通过设备名或者描述信息，返回k8s控制器api地址，使用api时需要通过此接口查询api地址",
+        "description": "调用接口时获取k8s控制器api地址",
         "inputSchema": {
             "type": "object",
             "properties": {
@@ -93,6 +93,7 @@ MCP_TOOLS_prompt = [
 
 MCP_TOOLS = {
     "run_cmd": run_cmd,
+    "serverRunCMD": serverRunCMD,
     "get_device_info":get_device_info2,
     "get_k8s_server":getMasterList,
     "get_k8s_nodes":getNodeByServer,

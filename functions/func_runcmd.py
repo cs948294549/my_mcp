@@ -46,8 +46,12 @@ def serverRunCMD(ip, cmds):
         if "&" in cmd or "|" in cmd or "kill" in cmd or "rm" in cmd:
             return f"安全策略限制：命令只能单条执行，或命令未授权，当前命令 '{cmd}' 被拒绝"
 
-        if cmd.lower().startswith('kubectl get') or cmd.lower().startswith(
-                'kubectl describe') or cmd.lower().startswith('grep') or cmd.lower().startswith('cat'):
+        if (cmd.lower().startswith('kubectl get') or
+                cmd.lower().startswith('kubectl describe') or
+                cmd.lower().startswith('grep') or
+                cmd.lower().startswith('cat') or
+                cmd.lower().startswith('kubectl top')
+        ):
             filtered_cmds.append(cmd)
         else:
             return f"安全策略限制：只允许执行查询相关的命令，当前命令 '{cmd}' 被拒绝"
