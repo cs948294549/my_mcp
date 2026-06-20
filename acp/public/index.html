@@ -95,7 +95,11 @@ function sendQuery() {
   input.value = '';
 }
 sendBtn.onclick = sendQuery;
-input.onkeydown = e => e.key === 'Enter' && sendQuery();
+input.onkeydown = e => {
+  if (e.key === 'Enter') {
+    sendQuery();
+  }
+};
 
 socket.on('acp_output', (msg) => {
   if (!msg || typeof msg !== 'object') {
@@ -121,6 +125,54 @@ socket.on('acp_output', (msg) => {
     case 'error':
       endOutput();
       print(`❌ ${p && p.message || '未知错误'}`, 'error');
+      break;
+    case 'permission_request':
+      endOutput();
+      const toolCall = p.toolCall;
+      const options = p.options || [];
+      const title = toolCall && toolCall.title || '未知工具请求';
+      const reqId = p.requestId;
+      print(`🔐 权限请求: ${title}`, 'tool');
+      
+      // 处理 think 类型的问题
+      if (toolCall && toolCall.kind === 'think' && toolCall.rawInput && toolCall.rawInput.questions) {
+        const questions = toolCall.rawInput.questions;
+        const answers = [];
+        for (const q of questions) {
+          print(`\n📌 ${q.header || '问题'}: ${q.question}`, 'tool');
+          if (q.options && q.options.length > 0) {
+            const qChoiceStr = prompt(`${q.question}\n${q.options.map((o, i) => `${i+1}. ${o.label} - ${o.description || ''}`).join('\n')}\n输入数字(1-${q.options.length})`);
+            const qChoice = parseInt(qChoiceStr) - 1;
+            if (qChoice >= 0 && qChoice < q.options.length) {
+              answers.push(q.options[qChoice].label);
+              print(`✅ 选择: ${q.options[qChoice].label}`, 'done');
+            } else {
+              answers.push('');
+              print('❌ 跳过', 'error');
+            }
+          } else if (!q.multiSelect) {
+            const answer = prompt(q.question);
+            answers.push(answer || '');
+            print(`✅ 回答: ${answer || '(空)'}`, 'done');
+          }
+        }
+        // 发送答案和确认
+        socket.emit('permission_response', { requestId: reqId, optionId: 'proceed_once', answers: answers });
+        print('✅ 已提交答案', 'done');
+      } else {
+        // 普通权限请求
+        if (options.length > 0) {
+          const choiceStr = prompt(`请选择:\n${options.map((o, i) => `${i+1}. ${o.name}`).join('\n')}\n输入数字(1-${options.length})`);
+          const choice = parseInt(choiceStr) - 1;
+          if (choice >= 0 && choice < options.length) {
+            socket.emit('permission_response', { requestId: reqId, optionId: options[choice].optionId });
+            print(`✅ 已选择: ${options[choice].name}`, 'done');
+          } else {
+            socket.emit('permission_response', { requestId: reqId, optionId: 'cancel' });
+            print('❌ 已拒绝', 'error');
+          }
+        }
+      }
       break;
     case 'result':
       endOutput();

@@ -63,7 +63,29 @@ function connectACP() {
       console.log('ACP消息:', JSON.stringify(data));
 
       if (data.jsonrpc === '2.0') {
-        if (data.id !== undefined) {
+        if (data.method === 'session/update') {
+          const update = data.params.update;
+          if (update.kind === 'AgentMessageChunk') {
+            io.emit('acp_output', { type: 'chat_chunk', payload: { content: update.content } });
+          } else if (update.kind === 'TurnEnd') {
+            io.emit('acp_output', { type: 'chat_done', payload: {} });
+          } else if (update.kind === 'ToolCall') {
+            io.emit('acp_output', { type: 'tool_call', payload: { tool: update, toolId: update.callId } });
+          } else if (update.kind === 'ToolCallUpdate') {
+            io.emit('acp_output', { type: 'tool_update', payload: update });
+          } else {
+            io.emit('acp_output', { type: 'session_update', payload: update });
+          }
+        } else if (data.method === 'session/request_permission') {
+          io.emit('acp_output', { 
+            type: 'permission_request', 
+            payload: {
+              requestId: data.id,
+              toolCall: data.params.toolCall,
+              options: data.params.options
+            }
+          });
+        } else if (data.id !== undefined) {
           if (data.result) {
             if (data.id === 0) {
               const newSessionReq = JSON.stringify({
@@ -82,21 +104,6 @@ function connectACP() {
           } else if (data.error) {
             io.emit('acp_output', { type: 'error', payload: { message: data.error.message, code: data.error.code } });
           }
-        } else if (data.method === 'session/update') {
-          const update = data.params.update;
-          if (update.kind === 'AgentMessageChunk') {
-            io.emit('acp_output', { type: 'chat_chunk', payload: { content: update.content } });
-          } else if (update.kind === 'TurnEnd') {
-            io.emit('acp_output', { type: 'chat_done', payload: {} });
-          } else if (update.kind === 'ToolCall') {
-            io.emit('acp_output', { type: 'tool_call', payload: { tool: update, toolId: update.callId } });
-          } else if (update.kind === 'ToolCallUpdate') {
-            io.emit('acp_output', { type: 'tool_update', payload: update });
-          } else {
-            io.emit('acp_output', { type: 'session_update', payload: update });
-          }
-        } else if (data.method === 'request_permission') {
-          io.emit('acp_output', { type: 'permission_request', payload: data.params });
         } else {
           io.emit('acp_output', { type: data.method || 'unknown', payload: data.params || data });
         }
@@ -141,6 +148,7 @@ io.on('connection', (socket) => {
         prompt: [{ type: 'text', text: query }]
       }
     });
+    console.log('发送给ACP:', promptReq);
     acpWs.send(promptReq);
   });
 
@@ -156,6 +164,19 @@ io.on('connection', (socket) => {
         result: data.allow ? { success: true } : { success: false, error: 'User denied' }
       }
     }));
+  });
+
+  socket.on('permission_response', (data) => {
+    if (!acpWs) return;
+    console.log('权限响应:', data);
+    
+    const response = {
+      jsonrpc: '2.0',
+      id: data.requestId,
+      result: { outcome: { outcome: 'selected', optionId: data.optionId } }
+    };
+    console.log('发送给ACP:', JSON.stringify(response));
+    acpWs.send(JSON.stringify(response));
   });
 
   socket.on('disconnect', () => {
