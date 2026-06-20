@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <title>Qwen ACP Web终端</title>
+  <script src="https://cdn.jsdelivr.net/npm/socket.io-client@4/dist/socket.io.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: Consolas, monospace; }
+    body { background: #1a1a1a; color: #eee; padding: 20px; height: 100vh; display: flex; flex-direction: column; }
+    #terminal {
+      flex: 1;
+      background: #0d0d0d;
+      padding: 12px;
+      overflow-y: auto;
+      border: 1px solid #333;
+      border-radius: 6px;
+      margin-bottom: 12px;
+      white-space: pre-wrap;
+    }
+    .input-line {
+      display: flex;
+      gap: 8px;
+    }
+    #input {
+      flex: 1;
+      background: #0d0d0d;
+      border: 1px solid #444;
+      color: #fff;
+      padding: 10px 12px;
+      border-radius: 4px;
+      outline: none;
+      font-size: 14px;
+    }
+    #send {
+      padding: 0 20px;
+      background: #2563eb;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .chunk { color: #7cf0ff; }
+    .done { color: #4ade80; }
+    .tool { color: #fbbf24; }
+    .error { color: #f87171; }
+  </style>
+</head>
+<body>
+<div id="terminal"></div>
+<div class="input-line">
+  <input id="input" placeholder="输入你的代码需求，回车发送..." autocomplete="off">
+  <button id="send">发送</button>
+</div>
+
+<script>
+const socket = io();
+
+const terminal = document.getElementById('terminal');
+const input = document.getElementById('input');
+const sendBtn = document.getElementById('send');
+
+let currentOutput = null;
+let currentOutputType = '';
+
+function print(text, cls = '') {
+  const div = document.createElement('div');
+  if (cls) div.className = cls;
+  div.textContent = text;
+  terminal.appendChild(div);
+  terminal.scrollTop = terminal.scrollHeight;
+  return div;
+}
+
+function appendToOutput(text, cls) {
+  if (!currentOutput || currentOutputType !== cls) {
+    currentOutput = print(text, cls);
+    currentOutputType = cls;
+  } else {
+    currentOutput.textContent += text;
+    terminal.scrollTop = terminal.scrollHeight;
+  }
+}
+
+function endOutput() {
+  currentOutput = null;
+  currentOutputType = '';
+}
+
+function sendQuery() {
+  const val = input.value.trim();
+  if (!val) return;
+  print(`> ${val}`);
+  endOutput();
+  socket.emit('user_input', val);
+  input.value = '';
+}
+sendBtn.onclick = sendQuery;
+input.onkeydown = e => e.key === 'Enter' && sendQuery();
+
+socket.on('acp_output', (msg) => {
+  if (!msg || typeof msg !== 'object') {
+    print(`格式异常: ${JSON.stringify(msg)}`, 'error');
+    return;
+  }
+  const t = msg.type;
+  const p = msg.payload;
+  switch (t) {
+    case 'chat_chunk':
+      appendToOutput(p && p.content || '', 'chunk');
+      break;
+    case 'chat_done':
+      endOutput();
+      print('=== 回答完成 ===', 'done');
+      break;
+    case 'tool_call':
+      endOutput();
+      print(`⚠️ 请求工具操作: ${JSON.stringify(p && p.tool, null, 2)}`, 'tool');
+      const allow = confirm(`是否允许执行工具：${p && p.tool && p.tool.name || '未知'}`);
+      socket.emit('tool_confirm', { allow, toolId: p && p.toolId });
+      break;
+    case 'error':
+      endOutput();
+      print(`❌ ${p && p.message || '未知错误'}`, 'error');
+      break;
+    case 'result':
+      endOutput();
+      break;
+    case 'session_update':
+      if (p.sessionUpdate === 'agent_message_chunk') {
+        appendToOutput(p.content && p.content.text || '', 'chunk');
+      } else if (p.sessionUpdate === 'agent_thought_chunk') {
+        appendToOutput(p.content && p.content.text || '', 'tool');
+      } else if (p._meta && p._meta.usage) {
+        endOutput();
+      }
+      break;
+    case '_qwen/notify':
+      if (p.kind === 'turn_complete') {
+        endOutput();
+        print('=== 回答完成 ===', 'done');
+      }
+      break;
+    default:
+      break;
+  }
+});
+
+socket.on('acp_output_raw', txt => print(txt, 'error'));
+socket.on('print', txt => print(txt, 'error'));
+</script>
+</body>
+</html>
