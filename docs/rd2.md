@@ -17,6 +17,17 @@ npx wechat-acp --agent qwen
 2.wechat-acp使用的内置的qwen --acp --experimental-skills然后通过 acp的stdio进行交互
 参考python代码 acp_qwen_mini.py 使用进程的stdin和stdout 进行交互
 
+3.如果远程需要使用serve模式，参考代码acp/server.js
+
+启动acp的服务
+qwen serve --hostname 127.0.0.1 --port 4500
+
+websocket地址
+http://127.0.0.1:4500/acp
+
+启动web服务测试功能
+node server.js
+
 ```
 
 # ilink相关接口
