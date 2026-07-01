@@ -19,7 +19,7 @@ def main():
     print("Starting Qwen Code with ACP protocol...\n")
 
     proc = subprocess.Popen(
-        ["qwen", "--acp"],
+        ["qwen.cmd", "--acp"],
         stdin=subprocess.PIPE,
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,

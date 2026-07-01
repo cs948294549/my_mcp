@@ -4,9 +4,19 @@ https://github.com/formulahendry/wechat-acp
 
 安装微信acp
 npx wechat-acp --agent claude
-
+npx wechat-acp --agent qwen
 然后在微信端使用Clawbot发送消息
 就能直接对接到本地的claude code上处理消息了
+```
+
+# 使用方法
+```text
+1.直接使用微信机器人时采用，后台挂着即可，使用acp模式可使用mcp和skill，使用serve模式无法使用mcp
+npx wechat-acp --agent qwen
+
+2.wechat-acp使用的内置的qwen --acp --experimental-skills然后通过 acp的stdio进行交互
+参考python代码 acp_qwen_mini.py 使用进程的stdin和stdout 进行交互
+
 ```
 
 # ilink相关接口
