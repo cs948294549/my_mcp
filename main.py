@@ -81,7 +81,7 @@ def handle_mcp_request(req):
             "jsonrpc": "2.0", "id": req_id,
             "result": {
                 "protocolVersion": "2024-11-05",
-                "capabilities": {"tools": {}},
+                "capabilities": {"tools": {}, "prompts": {}, "resources": {}},
                 "serverInfo": {"name": "my-server", "version": "1.0.0"}
             }
         }
@@ -89,6 +89,10 @@ def handle_mcp_request(req):
         return {"jsonrpc": "2.0", "id": req_id, "result": {}}
     elif method == "tools/list":
         return {"jsonrpc": "2.0", "id": req_id, "result": {"tools": MCP_TOOLS_prompt}}
+    elif method == "prompts/list":
+        return {"jsonrpc": "2.0", "id": req_id, "result": {"prompts": []}}
+    elif method == "resources/list":
+        return {"jsonrpc": "2.0", "id": req_id, "result": {"resources": []}}
     elif method == "tools/call":
         func_params = req.get("params", {})
 
